@@ -424,7 +424,7 @@ const auth=getAuth(app);
 
 // إعداد الدخول بجوجل مع ميزة اختيار الحساب لمنع التداخل
 const provider=new GoogleAuthProvider();
-provider.setCustomParameters({ prompt: 'select_account' });
+provider.setCustomParameters({prompt:'select_account'});
 
 // 2. ثوابت البرنامج (الأشهر والألوان)
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
