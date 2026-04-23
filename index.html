@@ -1,670 +1,551 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ميزانية البيت | النسخة الماستر</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&family=Playfair+Display:ital,wght@1,400;1,700&display=swap" rel="stylesheet">
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/react-is@18.2.0/umd/react-is.production.min.js"></script>
-    <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ميزانية البيت 💰</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f2f1ec;--surface:#fff;--surface2:#f7f6f2;
+  --text:#1a1a18;--text2:#6b6b68;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.2);
+  --green:#0F6E56;--red:#993C1D;--blue:#185FA5;--amber:#854F0B;
+  --green-bg:#E1F5EE;--red-bg:#FAECE7;--blue-bg:#E6F1FB;--amber-bg:#FAEEDA;
+  --accent:#185FA5;
+  --r-md:8px;--r-lg:14px;
+  --font:system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+/* THEMES */
+body.theme-light{--bg:#f2f1ec;--surface:#fff;--surface2:#f7f6f2;--text:#1a1a18;--text2:#6b6b68;--accent:#185FA5;}
+body.theme-dark{--bg:#111110;--surface:#1c1c1a;--surface2:#242422;--text:#f0efea;--text2:#8a8a86;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);--green-bg:#04342C;--red-bg:#4A1B0C;--blue-bg:#042C53;--amber-bg:#412402;}
+body.theme-navy{--bg:#0d1b2a;--surface:#1b2a3b;--surface2:#243447;--text:#e8f0f7;--text2:#7a9ab5;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);--green-bg:#04342C;--red-bg:#4A1B0C;--blue-bg:#0a2540;--accent:#4a9eff;}
+body.theme-black{--bg:#000;--surface:#111;--surface2:#1a1a1a;--text:#f0f0f0;--text2:#888;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);--green-bg:#04342C;--red-bg:#4A1B0C;--blue-bg:#042C53;--amber-bg:#412402;--accent:#4a9eff;}
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+body{background:var(--bg);font-family:var(--font);direction:rtl;min-height:100vh;color:var(--text);background-size:100% 100%;background-attachment:fixed;background-repeat:no-repeat;}
 
-    <style>
-        body { font-family: 'Noto Sans Arabic', sans-serif; background-color: #050505; color: white; margin: 0; min-height: 100vh; }
-        .font-serif { font-family: 'Playfair Display', serif; }
-        .pattern-dots { background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 20px 20px; }
-        .backdrop-blur-xl { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-        .tab-active { background: white !important; color: black !important; font-weight: bold; transform: scale(1.05); }
-        .bg-overlay {
-            position: fixed; inset: 0; background-size: cover; background-position: center;
-            opacity: 0.15; z-index: -1; transition: background-image 0.5s ease;
-        }
-    </style>
+/* LOGIN */
+#login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;}
+.login-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:40px 32px;max-width:360px;width:100%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.05);}
+.login-icon{font-size:48px;margin-bottom:16px;}
+.login-title{font-size:22px;font-weight:500;margin-bottom:8px;}
+.login-sub{font-size:14px;color:var(--text2);margin-bottom:32px;line-height:1.6;}
+.google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px 20px;border:0.5px solid var(--border2);border-radius:var(--r-md);background:var(--surface);color:var(--text);cursor:pointer;font-size:14px;font-family:var(--font);font-weight:500;transition:background .15s;}
+.google-btn:hover{background:var(--surface2);}
+
+/* APP */
+#app-screen{display:none;}
+.topbar{background:var(--surface);border-bottom:0.5px solid var(--border);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;box-shadow:0 2px 10px rgba(0,0,0,0.05);}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.topbar-title{font-size:16px;font-weight:700;}
+.topbar-sub{font-size:11px;color:var(--text2);margin-top:2px;}
+.sync-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:5px;background:#888;}
+.sync-dot.ok{background:#1D9E75;}.sync-dot.syncing{background:#BA7517;animation:pulse 1s infinite;}.sync-dot.err{background:#D85A30;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+.user-avatar{width:32px;height:32px;border-radius:50%;cursor:pointer;object-fit:cover;border:1.5px solid var(--border2);}
+.user-menu{position:relative;}
+.user-dropdown{display:none;position:absolute;right:0;left:auto;top:42px;background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--r-lg);padding:8px;min-width:210px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.15);}
+.user-dropdown.open{display:block;}
+.user-dropdown-name{font-size:13px;font-weight:600;padding:6px 10px;color:var(--text);}
+.user-dropdown-email{font-size:11px;color:var(--text2);padding:0 10px 8px;border-bottom:0.5px solid var(--border);}
+.menu-item{display:flex;align-items:center;gap:8px;width:100%;text-align:right;padding:10px;font-size:13px;background:none;border:none;cursor:pointer;color:var(--text);border-radius:var(--r-md);font-family:var(--font);}
+.menu-item:hover{background:var(--surface2);}
+.theme-swatches{display:flex;gap:6px;padding:10px;border-bottom:0.5px solid var(--border);}
+.swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;}
+.swatch.active{border-color:var(--accent);}
+
+.month-nav{display:flex;align-items:center;gap:5px;}
+.mnav-btn{background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--r-md);padding:4px 10px;cursor:pointer;color:var(--text);font-size:15px;font-family:var(--font);}
+.mnav-btn:hover{background:var(--surface2);}
+.mnav-label{font-size:13px;font-weight:600;min-width:100px;text-align:center;}
+
+.main-tabs{display:flex;align-items:center;background:var(--surface);border-bottom:0.5px solid var(--border);padding:0 12px;overflow-x:auto;}
+.main-tab{padding:12px 16px;font-size:13px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;font-family:var(--font);transition:all .15s;white-space:nowrap;}
+.main-tab.active{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:700;}
+
+.wa-btn-top{background:#25D366;color:white;border:none;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:var(--font);}
+.wa-btn-top:hover{opacity:0.9;}
+
+.page{display:none;padding:16px;max-width:740px;margin:0 auto;}
+.page.active{display:block;}
+
+.cards3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px;}
+.cards2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px;}
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;}
+.card-label{font-size:11px;color:var(--text2);margin-bottom:6px;}
+.card-val{font-size:18px;font-weight:700;}
+.cv-g{color:var(--green);}.cv-r{color:var(--red);}.cv-b{color:var(--blue);}
+
+.box{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);margin-bottom:14px;overflow:hidden;}
+.box-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid var(--border);background:var(--surface2);}
+.box-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.dg{background:#1D9E75;}.dr{background:#D85A30;}.db{background:#378ADD;}
+
+.irow{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid var(--border);cursor:pointer;transition:background .1s;}
+.irow:last-child{border-bottom:none;}
+.irow:hover{background:var(--surface2);}
+.irow-name{font-size:13px;font-weight:500;}
+.irow-sub{font-size:11px;color:var(--text2);margin-top:3px;}
+.iamt{font-size:14px;font-weight:600;}
+.iamt-g{color:var(--green);}.iamt-r{color:var(--red);}
+
+.add-row{display:flex;gap:8px;padding:12px 16px;background:var(--surface2);flex-wrap:wrap;}
+.add-row input,.add-row select{font-size:13px;padding:8px 12px;border:0.5px solid var(--border2);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-family:var(--font);}
+.add-row input{flex:1;min-width:100px;}
+.add-btn{padding:8px 16px;font-size:13px;border-radius:var(--r-md);border:none;background:var(--accent);color:#fff;cursor:pointer;font-weight:600;font-family:var(--font);}
+
+.empty{padding:24px;font-size:13px;color:var(--text2);text-align:center;}
+.chart-wrap{padding:16px;height:220px;position:relative;}
+
+/* Context Menu */
+.ctx-menu{position:fixed;background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--r-lg);padding:8px;min-width:160px;z-index:500;box-shadow:0 8px 24px rgba(0,0,0,0.15);display:none;}
+.ctx-menu.open{display:block;}
+
+/* Autocomplete */
+.ac-list{position:fixed;background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--r-md);z-index:600;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.15);display:none;min-width:200px;}
+.ac-list.open{display:block;}
+.ac-item{padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:0.5px solid var(--border);}
+.ac-item:hover{background:var(--surface2);}
+</style>
 </head>
-<body class="pattern-dots">
+<body>
 
-<div id="root"></div>
+<div class="ctx-menu" id="ctx-menu">
+  <button class="menu-item" onclick="ctxEdit()">✏️ تعديل</button>
+  <button class="menu-item" style="color:var(--red)" onclick="ctxDelete()">🗑️ حذف</button>
+</div>
 
-<script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
-    const { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = window.Recharts || {};
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-icon">🏠</div>
+    <div class="login-title">ميزانية البيت</div>
+    <div class="login-sub">إدارة المصاريف والمدخرات</div>
+    <button class="google-btn" onclick="signInWithGoogle()">
+      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      دخول بـ Google
+    </button>
+  </div>
+</div>
 
-    // --- إعدادات قاعدة البيانات (Firebase) ---
-    const firebaseConfig = {
-        apiKey: "AIzaSyDMSFTbFGetq1WsCo-mVsNUbHVcqhC4Tow",
-        authDomain: "budget-home-1.firebaseapp.com",
-        projectId: "budget-home-1",
-        storageBucket: "budget-home-1.firebasestorage.app",
-        messagingSenderId: "1082972153053",
-        appId: "1:1082972153053:web:ba31f2c4da3cf95e35e734"
-    };
+<div id="app-screen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="user-menu">
+        <img id="user-avatar" class="user-avatar" src="" onclick="toggleUserMenu()"/>
+        <div class="user-dropdown" id="user-dropdown">
+          <div class="user-dropdown-name" id="user-name"></div>
+          <div class="user-dropdown-email" id="user-email"></div>
+          <div class="theme-swatches">
+            <div class="swatch" style="background:#f2f1ec;border:1px solid #ccc" onclick="setTheme('light')"></div>
+            <div class="swatch" style="background:#1c1c1a" onclick="setTheme('dark')"></div>
+            <div class="swatch" style="background:#0d1b2a" onclick="setTheme('navy')"></div>
+            <div class="swatch" style="background:#000" onclick="setTheme('black')"></div>
+          </div>
+          <label class="menu-item">🖼️ تغيير الخلفية <input type="file" id="bg-upload" style="display:none" onchange="uploadBackground(event)" accept="image/*"></label>
+          <button class="menu-item" onclick="exportExcel()">⬇️ تصدير إكسل</button>
+          <label class="menu-item">⬆️ استيراد إكسل <input type="file" style="display:none" onchange="importExcel(event)" accept=".xlsx"></label>
+          <div style="border-top:1px solid var(--border); margin:4px 0;"></div>
+          <button class="menu-item" style="color:var(--red)" onclick="signOutUser()">تسجيل الخروج</button>
+        </div>
+      </div>
+      <div>
+        <div class="topbar-title">ميزانية البيت <span class="sync-dot" id="sync-dot"></span></div>
+        <div class="topbar-sub" id="cur-month-label"></div>
+      </div>
+    </div>
+    
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="wa-btn-top" onclick="doWhatsAppExport()">📲 إرسال</button>
+      <div class="month-nav" id="mnav">
+        <button class="mnav-btn" onclick="changeMonth(-1)">›</button>
+        <span class="mnav-label" id="mnav-label"></span>
+        <button class="mnav-btn" onclick="changeMonth(1)">‹</button>
+      </div>
+    </div>
+  </div>
 
-    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-    const googleProvider = new firebase.auth.GoogleAuthProvider();
+  <div class="main-tabs">
+    <button class="main-tab active" id="tab-month" onclick="switchMain('month')">الشهر الحالي</button>
+    <button class="main-tab" id="tab-savings" onclick="switchMain('savings')">المدخرات</button>
+    <button class="main-tab" id="tab-debt" onclick="switchMain('debt')">المديونية</button>
+    <button class="main-tab" id="tab-overview" onclick="switchMain('overview')">الإجمالي</button>
+  </div>
 
-    const MN = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-    const CATS = ['سكن', 'أكل وشرب', 'تنقل', 'تعليم', 'صحة', 'ترفيه', 'اشتراكات', 'تسوق', 'مدخرات', 'مصاريف متنوعة', 'أخرى'];
-    const fmt = (v) => (v || 0).toLocaleString('ar-KW') + ' د.ك';
+  <div class="page active" id="page-month">
+    <div class="cards3">
+      <div class="card"><div class="card-label">المدخول</div><div class="card-val cv-g" id="m-inc">0</div></div>
+      <div class="card"><div class="card-label">المصاريف</div><div class="card-val cv-r" id="m-exp">0</div></div>
+      <div class="card"><div class="card-label">المتبقي</div><div class="card-val cv-b" id="m-left">0</div></div>
+    </div>
 
-    function App() {
-        const [user, setUser] = useState(null);
-        const [loading, setLoading] = useState(true);
-        const [appData, setAppData] = useState({ budget: {}, debt: { owe: [], owed: [] } });
-        const [curDate, setCurDate] = useState({ y: new Date().getFullYear(), m: new Date().getMonth() });
-        const [tab, setTab] = useState('month');
-        const [bgImg, setBgImg] = useState(localStorage.getItem('budget-bg') || '');
-        const [editModal, setEditModal] = useState(null);
+    <div class="box">
+      <div class="box-head"><span class="box-title"><span class="dot dg"></span>مصادر الدخل</span></div>
+      <div id="m-inc-list"></div>
+      <div class="add-row">
+        <input type="text" id="inc-name" placeholder="الاسم" class="ac-input" data-ac="income" autocomplete="off"/>
+        <input type="number" id="inc-amt" placeholder="المبلغ"/>
+        <button class="add-btn" onclick="addIncome()">إضافة</button>
+      </div>
+    </div>
 
-        // --- الاتصال الآمن بالسحابة واسترجاع البيانات القديمة ---
-        useEffect(() => {
-            let unsubData = null;
-            const unsubAuth = auth.onAuthStateChanged((u) => {
-                setUser(u);
-                if (u) {
-                    unsubData = db.collection('users').doc(u.uid).collection('data').doc('main')
-                        .onSnapshot((snap) => {
-                            if (snap.exists) {
-                                const d = snap.data();
-                                let parsedBudget = {};
-                                let parsedDebt = { owe: [], owed: [] };
-                                try { parsedBudget = JSON.parse(d.budget || '{}'); } catch(e) {}
-                                try { parsedDebt = JSON.parse(d.debt || '{"owe":[],"owed":[]}'); } catch(e) {}
-                                setAppData({ budget: parsedBudget, debt: parsedDebt });
-                            }
-                            setLoading(false);
-                        }, (err) => {
-                            console.error("خطأ بالاتصال:", err);
-                            setLoading(false);
-                        });
-                } else {
-                    setLoading(false);
-                    if(unsubData) unsubData();
-                }
-            });
-            return () => {
-                unsubAuth();
-                if(unsubData) unsubData();
-            };
-        }, []);
+    <div class="box">
+      <div class="box-head"><span class="box-title"><span class="dot dr"></span>المصاريف</span></div>
+      <div id="m-exp-list"></div>
+      <div class="add-row">
+        <input type="text" id="exp-name" placeholder="الاسم" class="ac-input" data-ac="expense" autocomplete="off"/>
+        <select id="exp-cat"><option>سكن</option><option>أكل وشرب</option><option>تنقل</option><option>تعليم</option><option>ترفيه</option><option>أخرى</option></select>
+        <input type="number" id="exp-amt" placeholder="المبلغ"/>
+        <button class="add-btn" onclick="addExpense()">إضافة</button>
+      </div>
+    </div>
 
-        const saveToCloud = async (newData) => {
-            setAppData(newData);
-            if (!user) return;
-            await db.collection('users').doc(user.uid).collection('data').doc('main').set({
-                budget: JSON.stringify(newData.budget),
-                debt: JSON.stringify(newData.debt),
-                updated: Date.now()
-            });
-        };
+    <div class="box">
+      <div class="box-head"><span class="box-title">تحليل المصاريف</span></div>
+      <div class="chart-wrap"><canvas id="m-chart"></canvas></div>
+    </div>
+  </div>
 
-        const handleBgUpload = (e) => {
-            const file = e.target.files[0];
-            if(file) {
-                const reader = new FileReader();
-                reader.onload = ev => {
-                    setBgImg(ev.target.result);
-                    localStorage.setItem('budget-bg', ev.target.result);
-                };
-                reader.readAsDataURL(file);
-            }
-        };
+  <div class="page" id="page-savings">
+    <div class="cards2">
+      <div class="card"><div class="card-label">مدخرات هذا الشهر</div><div class="card-val cv-g" id="s-month-tot">0</div></div>
+      <div class="card"><div class="card-label">إجمالي المدخرات الكلي</div><div class="card-val cv-b" id="s-all-tot">0</div></div>
+    </div>
+    <div class="box">
+      <div class="box-head"><span class="box-title"><span class="dot db"></span>سجل المدخرات</span></div>
+      <div id="m-sav-list"></div>
+      <div class="add-row">
+        <input type="text" id="sav-name" placeholder="اسم الهدف" class="ac-input" data-ac="savings" autocomplete="off"/>
+        <input type="number" id="sav-amt" placeholder="المبلغ"/>
+        <button class="add-btn" onclick="addSaving()">إضافة</button>
+      </div>
+    </div>
+  </div>
 
-        // --- معالجة البيانات بأمان مضاد للشاشة السودة ---
-        const mDataRaw = (appData.budget[curDate.y] && appData.budget[curDate.y][curDate.m]) ? appData.budget[curDate.y][curDate.m] : {};
-        const safeIncome = mDataRaw.income || [];
-        const safeExpense = mDataRaw.expense || [];
-        const safeSavings = mDataRaw.savings || [];
+  <div class="page" id="page-debt">
+    <div class="cards2">
+      <div class="card"><div class="card-label">مطلوب مني (أنا مدين)</div><div class="card-val cv-r" id="d-owe">0</div></div>
+      <div class="card"><div class="card-label">طالب (مدين لي)</div><div class="card-val cv-g" id="d-owed">0</div></div>
+    </div>
+    
+    <div style="display:flex;gap:4px;margin-bottom:14px;">
+      <button class="main-tab active" id="dt-owe-btn" onclick="switchDebtTab('owe')" style="flex:1;text-align:center;border-bottom:2px solid var(--accent);">مطلوب مني</button>
+      <button class="main-tab" id="dt-owed-btn" onclick="switchDebtTab('owed')" style="flex:1;text-align:center;">مدين لي</button>
+    </div>
 
-        const summary = useMemo(() => {
-            const inc = safeIncome.reduce((s, i) => s + (i.amt||0), 0);
-            const exp = safeExpense.reduce((s, i) => s + (i.amt||0), 0);
-            const sav = safeSavings.reduce((s, i) => s + (i.amt||0), 0);
-            return { inc, exp, sav, left: inc - exp };
-        }, [safeIncome, safeExpense, safeSavings]);
+    <div id="dt-owe">
+      <div class="box"><div id="owe-list"></div></div>
+      <div class="box">
+        <div class="box-head"><span class="box-title">إضافة دين جديد</span></div>
+        <div class="add-row">
+          <input type="text" id="owe-person" placeholder="الاسم" class="ac-input" data-ac="debt-person"/>
+          <input type="text" id="owe-reason" placeholder="السبب"/>
+          <input type="number" id="owe-amt" placeholder="المبلغ"/>
+          <button class="add-btn" onclick="addDebt('owe')">إضافة</button>
+        </div>
+      </div>
+    </div>
+    
+    <div id="dt-owed" style="display:none">
+      <div class="box"><div id="owed-list"></div></div>
+      <div class="box">
+        <div class="box-head"><span class="box-title">إضافة حق جديد</span></div>
+        <div class="add-row">
+          <input type="text" id="owed-person" placeholder="الاسم" class="ac-input" data-ac="debt-person"/>
+          <input type="text" id="owed-reason" placeholder="السبب"/>
+          <input type="number" id="owed-amt" placeholder="المبلغ"/>
+          <button class="add-btn" onclick="addDebt('owed')">إضافة</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        const totalSavings = useMemo(() => {
-            let t = 0;
-            Object.values(appData.budget || {}).forEach(yr => {
-                Object.values(yr || {}).forEach(m => { t += (m.savings || []).reduce((s, i) => s + (i.amt||0), 0); });
-            });
-            return t;
-        }, [appData]);
+  <div class="page" id="page-overview">
+    <div class="cards3">
+      <div class="card"><div class="card-label">إجمالي الدخل</div><div class="card-val cv-g" id="o-inc">0</div></div>
+      <div class="card"><div class="card-label">إجمالي المصاريف</div><div class="card-val cv-r" id="o-exp">0</div></div>
+      <div class="card"><div class="card-label">المتبقي (فائض)</div><div class="card-val cv-b" id="o-left">0</div></div>
+    </div>
+    <div class="box">
+      <div class="box-head"><span class="box-title">رسم بياني - كل الأشهر</span></div>
+      <div class="chart-wrap"><canvas id="o-trend"></canvas></div>
+    </div>
+  </div>
+</div>
 
-        const trendData = useMemo(() => {
-            const res = [];
-            Object.keys(appData.budget || {}).sort().forEach(y => {
-                Object.keys(appData.budget[y] || {}).sort((a,b)=>Number(a)-Number(b)).forEach(m => {
-                    const d = appData.budget[y][m] || {};
-                    res.push({
-                        name: MN[m] + ' ' + String(y).substring(2),
-                        دخل: (d.income || []).reduce((s,i)=>s+(i.amt||0),0),
-                        صرف: (d.expense || []).reduce((s,i)=>s+(i.amt||0),0)
-                    });
-                });
-            });
-            return res;
-        }, [appData]);
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-        const getHistory = (type) => {
-            const set = new Set();
-            Object.values(appData.budget || {}).forEach(yr => {
-                Object.values(yr || {}).forEach(m => { ((m||{})[type]||[]).forEach(i => { if(i.name) set.add(i.name); }); });
-            });
-            return Array.from(set);
-        };
+const firebaseConfig={apiKey:"AIzaSyDMSFTbFGetq1WsCo-mVsNUbHVcqhC4Tow",authDomain:"budget-home-1.firebaseapp.com",projectId:"budget-home-1",storageBucket:"budget-home-1.firebasestorage.app",messagingSenderId:"1082972153053",appId:"1:1082972153053:web:ba31f2c4da3cf95e35e734"};
+const fbApp=initializeApp(firebaseConfig);
+const db=getFirestore(fbApp);
+const auth=getAuth(fbApp);
+const provider=new GoogleAuthProvider();
 
-        // --- Budget Actions ---
-        const addRecord = (type, name, amt, cat) => {
-            const newData = JSON.parse(JSON.stringify(appData));
-            if (!newData.budget[curDate.y]) newData.budget[curDate.y] = {};
-            if (!newData.budget[curDate.y][curDate.m]) newData.budget[curDate.y][curDate.m] = { income: [], expense: [], savings: [] };
-            if (!newData.budget[curDate.y][curDate.m][type]) newData.budget[curDate.y][curDate.m][type] = [];
-            
-            newData.budget[curDate.y][curDate.m][type].push({ id: Date.now(), name, amt: parseFloat(amt), cat });
-            saveToCloud(newData);
-        };
+const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+let CY=new Date().getFullYear(), CM=new Date().getMonth();
+let localData={budget:{},debt:{owe:[],owed:[]}};
+let currentUser=null, mChart=null, oChart=null, activeTab='month';
+let ctxType=null, ctxId=null;
 
-        const delRecord = (type, id) => {
-            if(!window.confirm('متأكد تبي تحذف السجل؟')) return;
-            const newData = JSON.parse(JSON.stringify(appData));
-            if (newData.budget[curDate.y] && newData.budget[curDate.y][curDate.m] && newData.budget[curDate.y][curDate.m][type]) {
-                newData.budget[curDate.y][curDate.m][type] = newData.budget[curDate.y][curDate.m][type].filter(i => i.id !== id);
-                saveToCloud(newData);
-            }
-        };
-
-        const saveEdit = (updatedItem) => {
-            const newData = JSON.parse(JSON.stringify(appData));
-            if (editModal.target === 'budget') {
-                if(newData.budget[editModal.y] && newData.budget[editModal.y][editModal.m]) {
-                    const arr = newData.budget[editModal.y][editModal.m][editModal.type] || [];
-                    const idx = arr.findIndex(i => i.id === updatedItem.id);
-                    if(idx > -1) arr[idx] = updatedItem;
-                }
-            } else if (editModal.target === 'debt') {
-                const arr = newData.debt[editModal.type] || [];
-                const idx = arr.findIndex(i => i.id === updatedItem.id);
-                if(idx > -1) arr[idx] = updatedItem;
-            }
-            saveToCloud(newData);
-            setEditModal(null);
-        };
-
-        // --- WhatsApp Export ---
-        const exportWA = (sect) => {
-            let t = `*تقرير ميزانية البيت (${sect})*\n📅 ${MN[curDate.m]} ${curDate.y}\n\n`;
-            if(sect === 'المدخرات') {
-                t += `🎯 إجمالي المدخرات الفعلية: ${fmt(totalSavings)}`;
-            } else if (sect === 'الديون') {
-                t += `⚠️ *مطلوب مني:*\n`;
-                (appData.debt.owe||[]).forEach(d => {
-                    const pd = (d.payments||[]).reduce((s,p)=>s+p.amt,0);
-                    t += `• لـ ${d.person}: ${fmt(d.amt - pd)}\n`;
-                });
-                t += `\n✅ *مدين لي:*\n`;
-                (appData.debt.owed||[]).forEach(d => {
-                    const pd = (d.payments||[]).reduce((s,p)=>s+p.amt,0);
-                    t += `• من ${d.person}: ${fmt(d.amt - pd)}\n`;
-                });
-            } else if (sect === 'الإجمالي') {
-                let tI=0, tE=0;
-                Object.values(appData.budget||{}).forEach(y => Object.values(y||{}).forEach(m => {
-                    tI += (m.income||[]).reduce((s,i)=>s+i.amt,0); tE += (m.expense||[]).reduce((s,i)=>s+i.amt,0);
-                }));
-                t = `📊 *الإجمالي التراكمي*\n\n🟢 الدخل الكلي: ${fmt(tI)}\n🔴 الصرف الكلي: ${fmt(tE)}\n🔹 الفائض: ${fmt(tI-tE)}\n🏦 المدخرات: ${fmt(totalSavings)}`;
-            } else {
-                t += `💰 دخل: ${fmt(summary.inc)}\n💸 مصروف: ${fmt(summary.exp)}\n🏦 متبقي: ${fmt(summary.left)}\n🎯 مدخرات الشهر: ${fmt(summary.sav)}`;
-            }
-            window.open(`https://wa.me/?text=${encodeURIComponent(t)}`, '_blank');
-        };
-
-        // --- Excel Export & Import ---
-        const exportExcel = () => {
-            const wb = XLSX.utils.book_new();
-            Object.keys(appData.budget || {}).sort().forEach(y => {
-                Object.keys(appData.budget[y] || {}).sort((a,b)=>Number(a)-Number(b)).forEach(m => {
-                    const d = appData.budget[y][m];
-                    const tI = (d.income||[]).reduce((s,i)=>s+i.amt,0);
-                    const tE = (d.expense||[]).reduce((s,i)=>s+i.amt,0);
-                    if(tI===0 && tE===0) return;
-                    const rows = [[`ميزانية ${MN[m]} ${y}`], []];
-                    rows.push(['── المدخول ──'], ['البند', 'المبلغ (د.ك)']);
-                    (d.income||[]).forEach(i => rows.push([i.name, i.amt]));
-                    rows.push(['إجمالي المدخول', tI], []);
-                    rows.push(['── المصاريف ──'], ['البند', 'الفئة', 'المبلغ (د.ك)']);
-                    (d.expense||[]).forEach(i => rows.push([i.name, i.cat||'', i.amt]));
-                    rows.push(['إجمالي المصاريف', '', tE], []);
-                    rows.push(['── المدخرات ──'], ['البند', 'المبلغ (د.ك)']);
-                    (d.savings||[]).forEach(i => rows.push([i.name, i.amt]));
-                    rows.push([], ['المدخول', tI], ['المصاريف', tE], ['المتبقي', tI-tE]);
-                    const ws = XLSX.utils.aoa_to_sheet(rows);
-                    ws['!cols'] = [{wch:28},{wch:16},{wch:16}];
-                    XLSX.utils.book_append_sheet(wb, ws, (`${MN[m]} ${y}`).substring(0,31));
-                });
-            });
-            const debtRows = [['المديونيات'], [], ['النوع', 'الشخص', 'السبب', 'المبلغ الأصلي', 'المدفوع', 'المتبقي']];
-            (appData.debt.owe||[]).forEach(d => { const p = (d.payments||[]).reduce((s,x)=>s+x.amt,0); debtRows.push(['مطلوب مني', d.person, d.reason||'', d.amt, p, d.amt-p]); });
-            (appData.debt.owed||[]).forEach(d => { const p = (d.payments||[]).reduce((s,x)=>s+x.amt,0); debtRows.push(['مدين لي', d.person, d.reason||'', d.amt, p, d.amt-p]); });
-            const wsDebt = XLSX.utils.aoa_to_sheet(debtRows);
-            wsDebt['!cols'] = [{wch:14},{wch:16},{wch:24},{wch:14},{wch:14},{wch:14}];
-            XLSX.utils.book_append_sheet(wb, wsDebt, "الديون");
-            XLSX.writeFile(wb, `Budget_${Date.now()}.xlsx`);
-        };
-
-        const importExcel = (e) => {
-            const file = e.target.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                try {
-                    const wb = XLSX.read(ev.target.result, {type: 'array'});
-                    const newData = JSON.parse(JSON.stringify(appData));
-                    let imported = 0;
-                    wb.SheetNames.forEach(sn => {
-                        const mi = MN.findIndex(m => sn.startsWith(m));
-                        const ym = sn.match(/(\d{4})/);
-                        if(mi !== -1 && ym) {
-                            const y = parseInt(ym[1]), m = mi;
-                            if(!newData.budget[y]) newData.budget[y] = {};
-                            if(!newData.budget[y][m]) newData.budget[y][m] = {income:[], expense:[], savings:[]};
-                            const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], {header:1, defval:''});
-                            let sec = '';
-                            rows.forEach(row => {
-                                const r0 = String(row[0]||'').trim(), r1 = String(row[1]||'').trim(), r2 = String(row[2]||'').trim();
-                                if(r0.includes('المدخول') && r0.includes('──')) { sec = 'income'; return; }
-                                if(r0.includes('المصاريف') && r0.includes('──')) { sec = 'expense'; return; }
-                                if(r0.includes('المدخرات') && r0.includes('──')) { sec = 'savings'; return; }
-                                if(!r0 || r0.includes('إجمالي') || r0==='البند' || r0==='المتبقي' || r0==='المدخول' || r0==='المصاريف') return;
-                                if(sec === 'income') { const a = parseFloat(r1)||0; if(a>0) newData.budget[y][m].income.push({id:Date.now()+Math.random(), name:r0, amt:a}); }
-                                else if(sec === 'expense') { const a = parseFloat(r2)||0; if(a>0) newData.budget[y][m].expense.push({id:Date.now()+Math.random(), name:r0, cat:r1||'أخرى', amt:a}); }
-                                else if(sec === 'savings') { const a = parseFloat(r1)||0; if(a>0) newData.budget[y][m].savings.push({id:Date.now()+Math.random(), name:r0, amt:a}); }
-                            });
-                            imported++;
-                        }
-                    });
-                    saveToCloud(newData);
-                    alert(imported > 0 ? `✓ تم استيراد ${imported} شهر بنجاح!` : 'لم يتم العثور على بيانات.');
-                } catch(err) { alert('حصل خطأ بالاستيراد.'); }
-                e.target.value = '';
-            };
-            reader.readAsArrayBuffer(file);
-        };
-
-        if (loading) return <div className="h-screen flex items-center justify-center italic opacity-30">جاري الاتصال بالسحابة...</div>;
-
-        if (!user) {
-            return (
-                <div className="h-screen flex flex-col items-center justify-center bg-[#050505] p-6 relative">
-                    {bgImg && <div className="bg-overlay" style={{backgroundImage: `url(${bgImg})`}}></div>}
-                    <div className="bg-white/5 border border-white/10 rounded-[3rem] p-12 text-center max-w-sm w-full shadow-2xl backdrop-blur-xl">
-                        <div className="text-5xl mb-6">🏠</div>
-                        <h1 className="text-2xl font-serif italic mb-2 tracking-tight">ميزانية البيت</h1>
-                        <p className="text-white/30 text-[10px] uppercase tracking-widest mb-10">Premium Edition</p>
-                        <button onClick={() => auth.signInWithPopup(googleProvider)} className="w-full bg-white text-black py-4 rounded-2xl font-bold hover:scale-105 transition-transform active:scale-95 shadow-xl">تسجيل الدخول بـ Google</button>
-                    </div>
-                </div>
-            );
-        }
-
-        return (
-            <div className="max-w-4xl mx-auto p-4 md:p-8 pb-32 relative">
-                {bgImg && <div className="bg-overlay" style={{backgroundImage: `url(${bgImg})`}}></div>}
-                
-                <header className="flex justify-between items-center mb-8 bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <img src={user.photoURL || ''} className="w-10 h-10 rounded-full border border-white/20" />
-                        <div>
-                            <div className="text-xs font-bold font-serif italic uppercase">ميزانية {user.displayName}</div>
-                            <div className="text-[9px] opacity-30 leading-none mt-1">مزامنة سحابية نشطة</div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <label className="bg-white/10 p-2 rounded-full cursor-pointer hover:bg-white/20 transition-colors" title="تغيير الخلفية">
-                            🖼️
-                            <input type="file" className="hidden" onChange={handleBgUpload} accept="image/*" />
-                        </label>
-                        <div className="flex items-center gap-3 bg-black/50 px-4 py-2 rounded-full border border-white/10 text-xs font-bold">
-                            <button onClick={() => setCurDate(p => { let m=p.m-1,y=p.y; if(m<0){m=11;y--} return {y,m}})}>›</button>
-                            <span className="w-24 text-center">{MN[curDate.m]} {curDate.y}</span>
-                            <button onClick={() => setCurDate(p => { let m=p.m+1,y=p.y; if(m>11){m=0;y++} return {y,m}})}>‹</button>
-                        </div>
-                    </div>
-                </header>
-
-                {tab === 'month' && (
-                    <div className="space-y-6 animate-fade-in">
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            <Stat label="المدخول" val={summary.inc} color="text-green-400" />
-                            <Stat label="المصاريف" val={summary.exp} color="text-red-400" />
-                            <Stat label="المتبقي" val={summary.left} color="text-blue-400" sub="الدخل - الصرف" />
-                        </div>
-                        <div className="flex justify-end bg-white/5 border border-white/10 p-3 rounded-2xl">
-                             <button onClick={() => exportWA('الشهر الحالي')} className="bg-green-600/20 text-green-400 px-6 py-2 rounded-xl text-[10px] font-bold border border-green-500/20 w-full md:w-auto">واتساب الشهر</button>
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-8">
-                            <Box title="مصادر الدخل" type="income" items={safeIncome} total={summary.inc} color="text-green-400" onAdd={(n,a)=>addRecord('income',n,a)} onDel={id=>delRecord('income',id)} history={getHistory('income')} onEdit={(item)=>setEditModal({target:'budget', y:curDate.y, m:curDate.m, type:'income', item})} />
-                            <Box title="المصاريف" type="expense" items={safeExpense} total={summary.exp} color="text-red-400" onAdd={(n,a,c)=>addRecord('expense',n,a,c)} onDel={id=>delRecord('expense',id)} hasCat history={getHistory('expense')} onEdit={(item)=>setEditModal({target:'budget', y:curDate.y, m:curDate.m, type:'expense', item})} />
-                        </div>
-                    </div>
-                )}
-
-                {tab === 'savings' && (
-                    <div className="space-y-6 animate-fade-in">
-                        <Stat label="صافي المدخرات الكلي" val={totalSavings} color="text-amber-400" sub="مجموع كافة الشهور السحابية" large />
-                        <div className="flex justify-end bg-white/5 border border-white/10 p-3 rounded-2xl">
-                             <button onClick={() => exportWA('المدخرات')} className="bg-green-600/20 text-green-400 px-6 py-2 rounded-xl border border-green-500/20 text-[10px] font-bold w-full md:w-auto">واتساب المدخرات</button>
-                        </div>
-                        <Box title="المدخرات اليدوية (الشهر الحالي)" type="savings" items={safeSavings} total={summary.sav} color="text-amber-400" onAdd={(n,a)=>addRecord('savings',n,a)} onDel={id=>delRecord('savings',id)} history={getHistory('savings')} onEdit={(item)=>setEditModal({target:'budget', y:curDate.y, m:curDate.m, type:'savings', item})} />
-                    </div>
-                )}
-
-                {tab === 'debt' && (
-                    <DebtSection appData={appData} saveToCloud={saveToCloud} setEditModal={setEditModal} exportWA={exportWA} getHistory={getHistory} />
-                )}
-
-                {tab === 'overview' && (
-                    <div className="space-y-6 animate-fade-in">
-                        <div className="flex gap-2 bg-white/5 border border-white/10 p-3 rounded-2xl flex-wrap">
-                             <button onClick={() => exportWA('الإجمالي')} className="flex-1 min-w-[120px] bg-green-600/20 text-green-400 py-3 rounded-xl text-[10px] font-bold border border-green-500/20">واتساب الإجمالي</button>
-                             <button onClick={exportExcel} className="flex-1 min-w-[120px] bg-blue-600/20 text-blue-400 py-3 rounded-xl text-[10px] font-bold border border-blue-500/20">⬇ تصدير Excel</button>
-                             <label className="flex-1 min-w-[120px] bg-purple-600/20 text-purple-400 py-3 rounded-xl text-[10px] font-bold border border-purple-500/20 text-center cursor-pointer">
-                                 ⬆ استيراد Excel
-                                 <input type="file" className="hidden" accept=".xlsx" onChange={importExcel} />
-                             </label>
-                        </div>
-                        {trendData.length > 0 && window.Recharts ? (
-                            <div className="bg-white/5 border border-white/10 rounded-[3rem] p-6 h-80 backdrop-blur-xl">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={trendData}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                                        <XAxis dataKey="name" fontSize={10} stroke="rgba(255,255,255,0.1)" />
-                                        <YAxis fontSize={10} stroke="rgba(255,255,255,0.1)" />
-                                        <Tooltip contentStyle={{backgroundColor:'#000', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'12px'}} />
-                                        <Area type="monotone" dataKey="دخل" stroke="#4ade80" fill="#4ade80" fillOpacity={0.05} />
-                                        <Area type="monotone" dataKey="صرف" stroke="#f87171" fill="#f87171" fillOpacity={0.05} />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            </div>
-                        ) : <div className="text-center py-12 opacity-30 text-xs">لا توجد بيانات كافية للرسم البياني</div>}
-                        <button onClick={() => auth.signOut()} className="w-full bg-red-500/5 text-red-500 py-4 rounded-3xl border border-red-500/10 text-sm font-bold mt-12 transition-colors hover:bg-red-500/10 uppercase tracking-widest">تسجيل الخروج</button>
-                    </div>
-                )}
-
-                <footer className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-md bg-black/80 backdrop-blur-xl border border-white/10 rounded-full p-2 flex justify-around items-center shadow-[0_10px_40px_rgba(0,0,0,0.5)] z-40">
-                    <NavBtn act={tab==='month'} click={()=>setTab('month')} label="الشهر" icon="🏠" />
-                    <NavBtn act={tab==='savings'} click={()=>setTab('savings')} label="المدخرات" icon="🏦" />
-                    <NavBtn act={tab==='debt'} click={()=>setTab('debt')} label="الديون" icon="🚩" />
-                    <NavBtn act={tab==='overview'} click={()=>setTab('overview')} label="الإجمالي" icon="📊" />
-                </footer>
-
-                {/* نافذة التعديل */}
-                {editModal && (
-                    <EditModal 
-                        modalData={editModal} 
-                        onClose={() => setEditModal(null)} 
-                        onSave={saveEdit} 
-                    />
-                )}
-            </div>
-        );
-    }
-
-    // --- مكونات واجهة المستخدم (Components) ---
-
-    function Stat({ label, val, color, sub, large }) {
-        return (
-            <div className={`bg-white/[0.03] border border-white/5 rounded-[2rem] p-5 flex flex-col justify-between transition-transform hover:scale-[1.02] backdrop-blur-md ${large?'h-40 text-center':'h-32'}`}>
-                <span className={`text-[9px] font-bold opacity-40 uppercase tracking-widest ${large?'mb-2':''}`}>{label}</span>
-                <div>
-                   <div className={`text-xl font-serif italic truncate ${color} ${large?'text-4xl':''}`}>{fmt(val)}</div>
-                   {sub && <div className="text-[9px] opacity-20 uppercase mt-1 tracking-tight">{sub}</div>}
-                </div>
-            </div>
-        );
-    }
-
-    function Box({ title, type, items, total, onAdd, onEdit, onDel, color, hasCat, history }) {
-        const [n, setN] = useState('');
-        const [a, setA] = useState('');
-        const [c, setC] = useState(CATS[1]);
-        const [q, setQ] = useState('');
-
-        const filtered = (items||[]).filter(i => (i.name||'').includes(q) || (i.cat||'').includes(q));
-
-        return (
-            <div className="bg-white/[0.03] border border-white/10 rounded-[2.5rem] overflow-hidden flex flex-col shadow-lg backdrop-blur-md pb-4">
-                <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
-                    <span className="text-xs font-bold uppercase tracking-widest opacity-80">{title}</span>
-                    <span className="text-xs opacity-40 font-serif italic tracking-tighter">{fmt(total)}</span>
-                </div>
-                
-                {items.length > 0 && (
-                    <div className="px-4 pt-3 pb-1">
-                        <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs outline-none focus:border-white/30 transition-colors" placeholder="🔍 بحث بالاسم أو التصنيف..." value={q} onChange={e=>setQ(e.target.value)} />
-                    </div>
-                )}
-
-                <div className="divide-y divide-white/5 max-h-64 overflow-y-auto custom-scrollbar flex-1">
-                    {filtered.length === 0 && <div className="py-12 text-center text-[10px] opacity-20 uppercase tracking-widest">لا توجد سجلات...</div>}
-                    {filtered.map(i => (
-                        <div key={i.id} className="p-4 flex justify-between items-center hover:bg-white/[0.02] group transition-all">
-                            <div>
-                                <div className="text-xs font-medium">{i.name}</div>
-                                {i.cat && <div className="text-[9px] opacity-30 uppercase mt-0.5">{i.cat}</div>}
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <span className={`text-[11px] font-bold font-serif italic ${color}`}>{fmt(i.amt)}</span>
-                                <button onClick={()=>onEdit(i)} className="text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] p-1" title="تعديل">✏️</button>
-                                <button onClick={()=>onDel(i.id)} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] p-1" title="حذف">✕</button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-                <div className="p-4 bg-white/[0.02] border-t border-white/5 flex flex-col gap-2">
-                    <div className="flex gap-2">
-                        <datalist id={`dl-${type}`}>{history.map((h, idx) => <option key={idx} value={h} />)}</datalist>
-                        <input list={`dl-${type}`} className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs outline-none focus:border-white/30" placeholder="البند" value={n} onChange={e=>setN(e.target.value)} />
-                        <input className="w-24 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs outline-none focus:border-white/30" placeholder="المبلغ" type="number" value={a} onChange={e=>setA(e.target.value)} />
-                    </div>
-                    {hasCat && (
-                        <select className="bg-[#111] border border-white/10 rounded-xl px-4 py-2 text-xs opacity-70 outline-none" value={c} onChange={e=>setC(e.target.value)}>
-                            {CATS.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                    )}
-                    <button onClick={()=>{if(n&&a){onAdd(n,a,hasCat?c:undefined);setN('');setA('')}}} className="bg-white text-black py-2 rounded-xl text-[10px] font-bold uppercase tracking-[0.1em] shadow-lg active:scale-95 transition-transform mt-1">إضافة السجل</button>
-                </div>
-            </div>
-        );
-    }
-
-    function DebtSection({ appData, saveToCloud, setEditModal, exportWA, getHistory }) {
-        const [tab, setTab] = useState('owe');
-        const [n, setN] = useState('');
-        const [a, setA] = useState('');
-        const [r, setR] = useState('');
-        const [q, setQ] = useState('');
+// --- Authentication & Data Load ---
+onAuthStateChanged(auth, user => {
+  if(user){
+    currentUser = user;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display = 'block';
+    document.getElementById('user-avatar').src = user.photoURL;
+    document.getElementById('user-name').textContent = user.displayName;
+    document.getElementById('user-email').textContent = user.email;
+    
+    // Data Normalizer: يقرأ البيانات القديمة والجديدة ويرتبها بدون كراش
+    onSnapshot(doc(db,'users',user.uid,'data','main'), snap => {
+      if(snap.exists()){
+        let d = snap.data();
+        let pB = {}, pD = {owe:[], owed:[]};
+        try { pB = JSON.parse(d.budget||'{}'); }catch(e){}
+        try { pD = JSON.parse(d.debt||'{"owe":[],"owed":[]}'); }catch(e){}
         
-        const debtsList = appData.debt[tab] || [];
-        const filteredDebts = debtsList.filter(d => (d.person||'').includes(q) || (d.reason||'').includes(q));
+        let cB = {};
+        Object.keys(pB).forEach(k => {
+          if(k.includes('-')){
+            let parts = k.split('-');
+            if(!cB[parts[0]]) cB[parts[0]] = {};
+            cB[parts[0]][parts[1]] = pB[k];
+          } else {
+            if(!cB[k]) cB[k] = {};
+            Object.keys(pB[k]).forEach(m => cB[k][m] = pB[k][m]);
+          }
+        });
+        localData = { budget: cB, debt: pD };
+      }
+      setSyncDot('ok');
+      if(activeTab==='month' || activeTab==='savings') renderMonth();
+      else if(activeTab==='overview') renderOverview();
+      else if(activeTab==='debt') renderDebt();
+    });
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app-screen').style.display = 'none';
+  }
+});
 
-        const addDebt = () => {
-            if(!n || !a || !r) return;
-            const newData = JSON.parse(JSON.stringify(appData));
-            newData.debt[tab].push({ id: Date.now(), person: n, amt: parseFloat(a), reason: r, date: new Date().toISOString().substring(0,10), payments: [] });
-            saveToCloud(newData);
-            setN(''); setA(''); setR('');
-        };
+async function saveToCloud() {
+  if(!currentUser) return;
+  setSyncDot('syncing');
+  try {
+    await setDoc(doc(db,'users',currentUser.uid,'data','main'), {
+      budget: JSON.stringify(localData.budget),
+      debt: JSON.stringify(localData.debt),
+      updated: Date.now()
+    });
+    setSyncDot('ok');
+  } catch(e) { setSyncDot('err'); }
+}
 
-        const delDebt = (id) => {
-            if(!window.confirm('حذف هذا الدين نهائياً؟')) return;
-            const newData = JSON.parse(JSON.stringify(appData));
-            newData.debt[tab] = newData.debt[tab].filter(d => d.id !== id);
-            saveToCloud(newData);
-        };
+// --- Layout & UI ---
+window.toggleUserMenu = () => document.getElementById('user-dropdown').classList.toggle('open');
+window.signInWithGoogle = () => signInWithPopup(auth, provider);
+window.signOutUser = () => auth.signOut();
 
-        const addPay = (id, pA, pN) => {
-            if(!pA) return;
-            const newData = JSON.parse(JSON.stringify(appData));
-            const d = newData.debt[tab].find(i=>i.id===id);
-            if(d) d.payments.push({ id: Date.now(), amt: parseFloat(pA), note: pN||'دفعة', date: new Date().toISOString().substring(0,10) });
-            saveToCloud(newData);
-        };
+window.setTheme = t => {
+  document.body.className = 'theme-' + t;
+  localStorage.setItem('budget-theme', t);
+};
 
-        const delPay = (dId, pId) => {
-            const newData = JSON.parse(JSON.stringify(appData));
-            const d = newData.debt[tab].find(i=>i.id===dId);
-            if(d) d.payments = d.payments.filter(p => p.id !== pId);
-            saveToCloud(newData);
-        };
+window.uploadBackground = e => {
+  const f = e.target.files[0];
+  if(f){
+    const r = new FileReader();
+    r.onload = ev => {
+      document.body.style.backgroundImage = `url('${ev.target.result}')`;
+      localStorage.setItem('budget-bg', ev.target.result);
+    };
+    r.readAsDataURL(f);
+  }
+};
 
-        return (
-            <div className="space-y-6 animate-fade-in">
-                <div className="grid grid-cols-2 gap-4">
-                    <Stat label="مطلوب مني" val={(appData.debt.owe||[]).reduce((s,d)=>s+(d.amt-(d.payments||[]).reduce((ss,p)=>ss+p.amt,0)),0)} color="text-red-400" />
-                    <Stat label="مدين لي" val={(appData.debt.owed||[]).reduce((s,d)=>s+(d.amt-(d.payments||[]).reduce((ss,p)=>ss+p.amt,0)),0)} color="text-green-400" />
-                </div>
-                <div className="flex justify-end bg-white/5 border border-white/10 p-3 rounded-2xl">
-                     <button onClick={() => exportWA('الديون')} className="bg-green-600/20 text-green-400 px-6 py-2 rounded-xl text-[10px] font-bold border border-green-500/20 w-full md:w-auto">واتساب الديون</button>
-                </div>
-                <div className="flex gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10">
-                    <button onClick={()=>setTab('owe')} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-colors ${tab==='owe'?'bg-white text-black':'text-white/50 hover:text-white'}`}>مطلوب مني</button>
-                    <button onClick={()=>setTab('owed')} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-colors ${tab==='owed'?'bg-white text-black':'text-white/50 hover:text-white'}`}>مدين لي</button>
-                </div>
+(function initSettings(){
+  const th = localStorage.getItem('budget-theme') || 'light';
+  window.setTheme(th);
+  const bg = localStorage.getItem('budget-bg');
+  if(bg) document.body.style.backgroundImage = `url('${bg}')`;
+})();
 
-                <div className="bg-white/[0.03] border border-white/10 rounded-[2.5rem] p-5 backdrop-blur-md">
-                    <h3 className="text-xs opacity-50 uppercase tracking-widest mb-4">إضافة دين جديد</h3>
-                    <div className="flex flex-col gap-3">
-                        <div className="flex gap-2">
-                            <input className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs outline-none focus:border-white/30" placeholder="اسم الشخص" value={n} onChange={e=>setN(e.target.value)} />
-                            <input className="w-24 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs outline-none focus:border-white/30" placeholder="المبلغ" type="number" value={a} onChange={e=>setA(e.target.value)} />
-                        </div>
-                        <div className="flex gap-2">
-                            <input className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs outline-none focus:border-white/30" placeholder="السبب / الملاحظة" value={r} onChange={e=>setR(e.target.value)} />
-                            <button onClick={addDebt} className="bg-white text-black px-6 py-2 rounded-xl text-[10px] font-bold active:scale-95 transition-transform">إضافة</button>
-                        </div>
-                    </div>
-                </div>
+function fmt(n) { return (n||0).toLocaleString('ar-KW') + ' د.ك'; }
+function setSyncDot(s) { document.getElementById('sync-dot').className = 'sync-dot ' + s; }
 
-                <div className="space-y-4">
-                    <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-white/30 transition-colors" placeholder="🔍 بحث في الأسماء والديون..." value={q} onChange={e=>setQ(e.target.value)} />
-                    
-                    {filteredDebts.length === 0 && <div className="text-center py-10 opacity-30 text-xs">لا توجد ديون مسجلة</div>}
-                    {filteredDebts.map(d => {
-                        const pd = (d.payments||[]).reduce((s,p)=>s+p.amt,0);
-                        const rem = d.amt - pd;
-                        const isDone = rem <= 0;
-                        return (
-                            <div key={d.id} className="bg-white/[0.02] border border-white/10 rounded-[2rem] p-5 backdrop-blur-md group">
-                                <div className="flex justify-between items-start mb-3">
-                                    <div>
-                                        <div className="font-bold text-sm">{d.person} {isDone && <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full ml-2">مسدد</span>}</div>
-                                        <div className="text-[10px] opacity-40 mt-1">{d.reason} • {d.date}</div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button onClick={()=>setEditModal({target:'debt', type:tab, item:d})} className="text-blue-400 opacity-60 hover:opacity-100 text-[11px] p-1">✏️</button>
-                                        <button onClick={()=>delDebt(d.id)} className="text-red-400 opacity-60 hover:opacity-100 text-[11px] p-1">✕</button>
-                                    </div>
-                                </div>
-                                <div className="flex gap-4 text-[10px] opacity-60 mb-3">
-                                    <span>الأصل: {fmt(d.amt)}</span>
-                                    <span className="text-green-400">مدفوع: {fmt(pd)}</span>
-                                    <span className={rem>0?'text-red-400':''}>متبقي: {fmt(Math.max(0,rem))}</span>
-                                </div>
-                                <div className="h-1.5 bg-white/10 rounded-full mb-4 overflow-hidden">
-                                    <div className={`h-full ${isDone?'bg-green-500':'bg-blue-500'}`} style={{width: `${Math.min(100, (pd/d.amt)*100)}%`}}></div>
-                                </div>
-                                
-                                {(d.payments||[]).length > 0 && (
-                                    <div className="mb-3 space-y-1">
-                                        {d.payments.map(p => (
-                                            <div key={p.id} className="flex justify-between text-[10px] bg-white/5 px-3 py-1.5 rounded-lg opacity-80">
-                                                <span>{p.note} ({p.date})</span>
-                                                <div className="flex gap-3">
-                                                    <span className="text-green-400">{fmt(p.amt)}</span>
-                                                    <button onClick={()=>delPay(d.id, p.id)} className="text-red-400 hover:text-red-300">✕</button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                
-                                {!isDone && <PayForm onPay={(a,n) => addPay(d.id, a, n)} />}
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-        );
-    }
+window.switchMain = (tab) => {
+  activeTab = tab;
+  ['month','savings','debt','overview'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('page-'+t).classList.toggle('active', t===tab);
+  });
+  document.getElementById('mnav').style.display = (tab==='month'||tab==='savings') ? 'flex' : 'none';
+  if(tab==='month' || tab==='savings') renderMonth();
+  else if(tab==='overview') renderOverview();
+  else if(tab==='debt') renderDebt();
+};
 
-    function PayForm({ onPay }) {
-        const [a, setA] = useState('');
-        const [n, setN] = useState('');
-        return (
-            <div className="flex gap-2 mt-2">
-                <input className="w-20 bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] outline-none" placeholder="مبلغ الدفعة" type="number" value={a} onChange={e=>setA(e.target.value)} />
-                <input className="flex-1 bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] outline-none" placeholder="ملاحظة (اختياري)" value={n} onChange={e=>setN(e.target.value)} />
-                <button onClick={()=>{onPay(a,n); setA(''); setN('');}} className="bg-white/10 hover:bg-white/20 px-3 rounded-lg text-[10px] transition-colors">تأكيد</button>
-            </div>
-        );
-    }
+window.changeMonth = (dir) => {
+  CM += dir; if(CM<0){CM=11;CY--;} if(CM>11){CM=0;CY++;}
+  renderMonth();
+};
 
-    function EditModal({ modalData, onClose, onSave }) {
-        const { item, target } = modalData;
-        const [n, setN] = useState(item.name || item.person || '');
-        const [a, setA] = useState(item.amt || '');
-        const [c, setC] = useState(item.cat || '');
-        const [r, setR] = useState(item.reason || '');
+function getMonthData(y,m) {
+  if(!localData.budget[y]) localData.budget[y] = {};
+  if(!localData.budget[y][m]) localData.budget[y][m] = { income:[], expense:[], savings:[] };
+  return localData.budget[y][m];
+}
 
-        return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-                <div className="bg-[#111] border border-white/10 rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl">
-                    <h3 className="text-sm font-bold mb-6 opacity-80 uppercase tracking-widest text-center">تعديل السجل</h3>
-                    <div className="flex flex-col gap-4">
-                        <input className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-white/30" placeholder="الاسم" value={n} onChange={e=>setN(e.target.value)} />
-                        <input className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-white/30" placeholder="المبلغ" type="number" value={a} onChange={e=>setA(e.target.value)} />
-                        {item.cat && (
-                            <select className="bg-black border border-white/10 rounded-xl px-4 py-3 text-xs opacity-70 outline-none" value={c} onChange={e=>setC(e.target.value)}>
-                                {CATS.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                            </select>
-                        )}
-                        {item.reason !== undefined && (
-                            <input className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-white/30" placeholder="السبب" value={r} onChange={e=>setR(e.target.value)} />
-                        )}
-                    </div>
-                    <div className="flex gap-3 mt-8">
-                        <button onClick={() => onSave({ ...item, name: item.name!==undefined?n:undefined, person: item.person!==undefined?n:undefined, amt: parseFloat(a), cat: item.cat?c:undefined, reason: item.reason!==undefined?r:undefined })} className="flex-1 bg-white text-black py-3 rounded-xl text-xs font-bold transition-transform active:scale-95">حفظ التعديل</button>
-                        <button onClick={onClose} className="px-6 py-3 rounded-xl border border-white/20 text-xs font-bold hover:bg-white/5 transition-colors">إلغاء</button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+// --- Render Core ---
+window.renderMonth = () => {
+  document.getElementById('cur-month-label').textContent = MN[CM] + ' ' + CY;
+  document.getElementById('mnav-label').textContent = MN[CM] + ' ' + CY;
+  
+  const d = getMonthData(CY, CM);
+  const tI = d.income.reduce((s,i)=>s+(i.amt||0),0);
+  const tE = d.expense.reduce((s,i)=>s+(i.amt||0),0);
+  const tS = d.savings.reduce((s,i)=>s+(i.amt||0),0);
+  
+  document.getElementById('m-inc').textContent = fmt(tI);
+  document.getElementById('m-exp').textContent = fmt(tE);
+  document.getElementById('m-left').textContent = fmt(tI - tE);
+  
+  document.getElementById('s-month-tot').textContent = fmt(tS);
+  let allS = 0;
+  Object.values(localData.budget).forEach(y => Object.values(y).forEach(m => allS += (m.savings||[]).reduce((s,i)=>s+i.amt,0)));
+  document.getElementById('s-all-tot').textContent = fmt(allS);
 
-    function NavBtn({ act, click, label, icon }) {
-        return (
-            <button onClick={click} className={`flex-1 flex flex-col items-center gap-1 py-2.5 rounded-full transition-all duration-300 ${act?'tab-active shadow-2xl bg-white text-black':'text-white/40 hover:text-white'}`}>
-                <span className={`text-lg ${act?'scale-110':''}`}>{icon}</span>
-                <span className="text-[9px] font-bold uppercase tracking-tighter">{label}</span>
-            </button>
-        );
-    }
+  const drawList = (id, items, t) => {
+    document.getElementById(id).innerHTML = items.map(i => `
+      <div class="irow" onclick="openCtx(event,'${t}',${i.id})">
+        <div><div class="irow-name">${i.name}</div>${i.cat?`<div class="irow-sub">${i.cat}</div>`:''}</div>
+        <div class="iamt ${t==='expense'?'iamt-r':'iamt-g'}">${fmt(i.amt)}</div>
+      </div>
+    `).join('') || '<div class="empty">لا توجد سجلات</div>';
+  };
+  
+  drawList('m-inc-list', d.income, 'income');
+  drawList('m-exp-list', d.expense, 'expense');
+  drawList('m-sav-list', d.savings, 'savings');
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+  if(mChart) mChart.destroy();
+  if(tI>0 || tE>0){
+    mChart = new Chart(document.getElementById('m-chart'), {
+      type: 'bar',
+      data: { labels: ['المدخول','المصاريف','المتبقي'], datasets: [{ data: [tI, tE, Math.max(0, tI-tE)], backgroundColor: ['#1D9E75','#D85A30','#378ADD'], borderRadius:4 }] },
+      options: { maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}} }
+    });
+  }
+};
+
+window.renderOverview = () => {
+  let tI=0, tE=0, labels=[], dI=[], dE=[];
+  Object.keys(localData.budget).sort().forEach(y => {
+    Object.keys(localData.budget[y]).sort((a,b)=>Number(a)-Number(b)).forEach(m => {
+      const inc = (localData.budget[y][m].income||[]).reduce((s,i)=>s+i.amt,0);
+      const exp = (localData.budget[y][m].expense||[]).reduce((s,i)=>s+i.amt,0);
+      tI+=inc; tE+=exp;
+      labels.push(MN[m]+' '+String(y).substring(2)); dI.push(inc); dE.push(exp);
+    });
+  });
+  document.getElementById('o-inc').textContent = fmt(tI);
+  document.getElementById('o-exp').textContent = fmt(tE);
+  document.getElementById('o-left').textContent = fmt(tI - tE);
+
+  if(oChart) oChart.destroy();
+  if(labels.length > 0){
+    oChart = new Chart(document.getElementById('o-trend'), {
+      type: 'line',
+      data: { labels: labels, datasets: [{ label:'المدخول', data:dI, borderColor:'#1D9E75', tension:0.3 }, { label:'المصاريف', data:dE, borderColor:'#D85A30', tension:0.3 }] },
+      options: { maintainAspectRatio:false }
+    });
+  }
+};
+
+window.renderDebt = () => {
+  let tOwe=0, tOwed=0;
+  const drawDebt = (side, id) => {
+    document.getElementById(id).innerHTML = localData.debt[side].map(d => {
+      const pd = (d.payments||[]).reduce((s,p)=>s+p.amt,0);
+      const rem = d.amt - pd;
+      if(side==='owe') tOwe+=rem; else tOwed+=rem;
+      return `
+        <div class="irow" onclick="openCtx(event,'debt_${side}',${d.id})">
+          <div><div class="irow-name">${d.person}</div><div class="irow-sub">${d.reason}</div></div>
+          <div class="iamt ${side==='owe'?'iamt-r':'iamt-g'}">${fmt(rem)}</div>
+        </div>
+      `;
+    }).join('') || '<div class="empty">لا توجد ديون</div>';
+  };
+  drawDebt('owe', 'owe-list');
+  drawDebt('owed', 'owed-list');
+  document.getElementById('d-owe').textContent = fmt(tOwe);
+  document.getElementById('d-owed').textContent = fmt(tOwed);
+};
+
+window.switchDebtTab = (t) => {
+  document.getElementById('dt-owe-btn').style.borderBottom = t==='owe' ? '2px solid var(--accent)' : 'none';
+  document.getElementById('dt-owed-btn').style.borderBottom = t==='owed' ? '2px solid var(--accent)' : 'none';
+  document.getElementById('dt-owe').style.display = t==='owe' ? 'block' : 'none';
+  document.getElementById('dt-owed').style.display = t==='owed' ? 'block' : 'none';
+};
+
+// --- Actions ---
+window.addIncome = () => { const n=document.getElementById('inc-name').value; const a=document.getElementById('inc-amt').value; if(n&&a){ getMonthData(CY,CM).income.push({id:Date.now(), name:n, amt:Number(a)}); document.getElementById('inc-name').value=''; document.getElementById('inc-amt').value=''; saveToCloud(); renderMonth(); }};
+window.addExpense = () => { const n=document.getElementById('exp-name').value; const a=document.getElementById('exp-amt').value; const c=document.getElementById('exp-cat').value; if(n&&a){ getMonthData(CY,CM).expense.push({id:Date.now(), name:n, amt:Number(a), cat:c}); document.getElementById('exp-name').value=''; document.getElementById('exp-amt').value=''; saveToCloud(); renderMonth(); }};
+window.addSaving = () => { const n=document.getElementById('sav-name').value; const a=document.getElementById('sav-amt').value; if(n&&a){ getMonthData(CY,CM).savings.push({id:Date.now(), name:n, amt:Number(a)}); document.getElementById('sav-name').value=''; document.getElementById('sav-amt').value=''; saveToCloud(); renderMonth(); }};
+window.addDebt = (side) => { const n=document.getElementById(side+'-person').value; const a=document.getElementById(side+'-amt').value; const r=document.getElementById(side+'-reason').value; if(n&&a){ localData.debt[side].push({id:Date.now(), person:n, amt:Number(a), reason:r||'', date:new Date().toISOString().substring(0,10), payments:[]}); document.getElementById(side+'-person').value=''; document.getElementById(side+'-amt').value=''; document.getElementById(side+'-reason').value=''; saveToCloud(); renderDebt(); }};
+
+// --- Context & Delete ---
+window.openCtx = (e, type, id) => {
+  e.preventDefault();
+  ctxType = type; ctxId = id;
+  const m = document.getElementById('ctx-menu');
+  m.style.display = 'block';
+  m.style.left = Math.min(e.clientX, window.innerWidth-160) + 'px';
+  m.style.top = e.clientY + 'px';
+};
+document.addEventListener('click', e => { if(!e.target.closest('#ctx-menu')) document.getElementById('ctx-menu').style.display='none'; });
+
+window.ctxDelete = () => {
+  if(!confirm('حذف السجل؟')) return;
+  if(ctxType.startsWith('debt_')) {
+    const s = ctxType.split('_')[1];
+    localData.debt[s] = localData.debt[s].filter(i=>i.id!==ctxId);
+    renderDebt();
+  } else {
+    getMonthData(CY,CM)[ctxType] = getMonthData(CY,CM)[ctxType].filter(i=>i.id!==ctxId);
+    renderMonth();
+  }
+  saveToCloud();
+  document.getElementById('ctx-menu').style.display='none';
+};
+window.ctxEdit = () => alert('خاصية التعديل السريع تحت التطوير بالنسخة القادمة. حالياً تقدر تحذف وتضيف من جديد.');
+
+// --- WhatsApp Export ---
+window.doWhatsAppExport = () => {
+  let msg = "";
+  if(activeTab === 'month') {
+    const d = getMonthData(CY, CM);
+    msg = `💰 *تقرير ميزانية ${MN[CM]} ${CY}*\n\n🟢 الدخل: ${fmt(d.income.reduce((s,i)=>s+i.amt,0))}\n🔴 المصاريف: ${fmt(d.expense.reduce((s,i)=>s+i.amt,0))}\n🔹 المتبقي: ${fmt(d.income.reduce((s,i)=>s+i.amt,0)-d.expense.reduce((s,i)=>s+i.amt,0))}`;
+  } else if (activeTab === 'savings') {
+    let tS = 0; Object.values(localData.budget).forEach(y => Object.values(y).forEach(m => tS += (m.savings||[]).reduce((s,i)=>s+i.amt,0)));
+    msg = `🏦 *تقرير المدخرات*\n\nإجمالي المدخرات الكلي: ${fmt(tS)}`;
+  } else if (activeTab === 'debt') {
+    msg = `🚩 *تقرير المديونية*\n\nمطلوب مني: ${document.getElementById('d-owe').textContent}\nمدين لي: ${document.getElementById('d-owed').textContent}`;
+  } else {
+    msg = `📊 *ملخص الميزانية التراكمي*\n\nالدخل: ${document.getElementById('o-inc').textContent}\nالمصاريف: ${document.getElementById('o-exp').textContent}\nالمتبقي: ${document.getElementById('o-left').textContent}`;
+  }
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+};
+
 </script>
 </body>
 </html>
