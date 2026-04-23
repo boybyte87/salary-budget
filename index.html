@@ -455,9 +455,57 @@ window.renderMonth = () => {
   }
 };
 
-window.renderOverview = () => { ... } // Same as your original code
-window.renderDebt = () => { ... } // Same as your original code
-window.switchDebtTab = (t) => { ... } // Same as your original code
+window.renderOverview = () => {
+  let tI=0, tE=0, labels=[], dI=[], dE=[];
+  Object.keys(localData.budget).sort().forEach(y => {
+    Object.keys(localData.budget[y]).sort((a,b)=>Number(a)-Number(b)).forEach(m => {
+      const inc = (localData.budget[y][m].income||[]).reduce((s,i)=>s+i.amt,0);
+      const exp = (localData.budget[y][m].expense||[]).reduce((s,i)=>s+i.amt,0);
+      tI+=inc; tE+=exp;
+      labels.push(MN[m]+' '+String(y).substring(2)); dI.push(inc); dE.push(exp);
+    });
+  });
+  document.getElementById('o-inc').textContent = fmt(tI);
+  document.getElementById('o-exp').textContent = fmt(tE);
+  document.getElementById('o-left').textContent = fmt(tI - tE);
+
+  if(oChart) oChart.destroy();
+  if(labels.length > 0){
+    oChart = new Chart(document.getElementById('o-trend'), {
+      type: 'line',
+      data: { labels: labels, datasets: [{ label:'المدخول', data:dI, borderColor:'#1D9E75', tension:0.3 }, { label:'المصاريف', data:dE, borderColor:'#D85A30', tension:0.3 }] },
+      options: { maintainAspectRatio:false }
+    });
+  }
+};
+
+window.renderDebt = () => {
+  let tOwe=0, tOwed=0;
+  const drawDebt = (side, id) => {
+    document.getElementById(id).innerHTML = localData.debt[side].map(d => {
+      const pd = (d.payments||[]).reduce((s,p)=>s+p.amt,0);
+      const rem = d.amt - pd;
+      if(side==='owe') tOwe+=rem; else tOwed+=rem;
+      return `
+        <div class="irow" onclick="openCtx(event,'debt_${side}',${d.id})">
+          <div><div class="irow-name">${d.person}</div><div class="irow-sub">${d.reason}</div></div>
+          <div class="iamt ${side==='owe'?'iamt-r':'iamt-g'}">${fmt(rem)}</div>
+        </div>
+      `;
+    }).join('') || '<div class="empty">لا توجد ديون</div>';
+  };
+  drawDebt('owe', 'owe-list');
+  drawDebt('owed', 'owed-list');
+  document.getElementById('d-owe').textContent = fmt(tOwe);
+  document.getElementById('d-owed').textContent = fmt(tOwed);
+};
+
+window.switchDebtTab = (t) => {
+  document.getElementById('dt-owe-btn').style.borderBottom = t==='owe' ? '2px solid var(--accent)' : 'none';
+  document.getElementById('dt-owed-btn').style.borderBottom = t==='owed' ? '2px solid var(--accent)' : 'none';
+  document.getElementById('dt-owe').style.display = t==='owe' ? 'block' : 'none';
+  document.getElementById('dt-owed').style.display = t==='owed' ? 'block' : 'none';
+};
 
 // --- Actions With Validation & Currency ---
 window.addIncome = () => { 
@@ -475,11 +523,11 @@ window.addExpense = () => {
   const n = document.getElementById('exp-name').value; 
   const a = Number(document.getElementById('exp-amt').value); 
   const c = document.getElementById('exp-cat').value; 
-  const currMult = Number(document.getElementById('exp-curr').value); // ميزة العملات المتعددة
+  const currMult = Number(document.getElementById('exp-curr').value); 
   
   if(!n || a <= 0) return showToast("الرجاء إدخال اسم ومبلغ صحيح ⚠️");
   
-  const finalAmt = a * currMult; // تحويل العملة لو كانت THB
+  const finalAmt = a * currMult; 
   
   getMonthData(CY,CM).expense.push({id:Date.now(), name:n, amt:finalAmt, cat:c}); 
   document.getElementById('exp-name').value=''; 
@@ -487,7 +535,29 @@ window.addExpense = () => {
   saveToCloud(); renderMonth(); showToast("تم إضافة المصروف ✅");
 };
 
-// ... addSaving & addDebt functions similar validation updates ...
+window.addSaving = () => { 
+  const n = document.getElementById('sav-name').value; 
+  const a = Number(document.getElementById('sav-amt').value); 
+  if(!n || a <= 0) return showToast("الرجاء إدخال اسم ومبلغ صحيح ⚠️");
+  
+  getMonthData(CY,CM).savings.push({id:Date.now(), name:n, amt:a}); 
+  document.getElementById('sav-name').value=''; 
+  document.getElementById('sav-amt').value=''; 
+  saveToCloud(); renderMonth(); showToast("تمت الإضافة بنجاح ✅");
+};
+
+window.addDebt = (side) => { 
+  const n = document.getElementById(side+'-person').value; 
+  const a = Number(document.getElementById(side+'-amt').value); 
+  const r = document.getElementById(side+'-reason').value; 
+  if(!n || a <= 0) return showToast("الرجاء إدخال اسم ومبلغ صحيح ⚠️");
+  
+  localData.debt[side].push({id:Date.now(), person:n, amt:a, reason:r||'', date:new Date().toISOString().substring(0,10), payments:[]}); 
+  document.getElementById(side+'-person').value=''; 
+  document.getElementById(side+'-amt').value=''; 
+  document.getElementById(side+'-reason').value=''; 
+  saveToCloud(); renderDebt(); showToast("تمت إضافة الدين بنجاح ✅");
+};
 
 // --- Context & Real Edit ---
 window.openCtx = (e, type, id) => {
@@ -524,14 +594,18 @@ window.ctxEdit = () => {
       document.getElementById('exp-name').value = item.name;
       document.getElementById('exp-amt').value = item.amt;
       document.getElementById('exp-cat').value = item.cat || 'أخرى';
-      document.getElementById('exp-curr').value = "1"; // Reset to KWD for editing
+      document.getElementById('exp-curr').value = "1"; 
       document.getElementById('exp-name').focus();
     } else if(ctxType === 'income') {
       document.getElementById('inc-name').value = item.name;
       document.getElementById('inc-amt').value = item.amt;
       document.getElementById('inc-name').focus();
+    } else if(ctxType === 'savings') {
+      document.getElementById('sav-name').value = item.name;
+      document.getElementById('sav-amt').value = item.amt;
+      document.getElementById('sav-name').focus();
     }
-    // Delete the old record after populating
+    
     targetList.splice(itemIndex, 1);
     saveToCloud();
     renderMonth();
@@ -545,8 +619,9 @@ window.exportExcel = () => {
   Object.keys(localData.budget).forEach(y => {
     Object.keys(localData.budget[y]).forEach(m => {
       const d = localData.budget[y][m];
-      d.expense.forEach(e => exportArr.push({ السنة: y, الشهر: MN[m], النوع: 'مصروف', التصنيف: e.cat, الاسم: e.name, المبلغ: e.amt }));
-      d.income.forEach(i => exportArr.push({ السنة: y, الشهر: MN[m], النوع: 'دخل', التصنيف: '-', الاسم: i.name, المبلغ: i.amt }));
+      (d.expense||[]).forEach(e => exportArr.push({ السنة: y, الشهر: MN[m], النوع: 'مصروف', التصنيف: e.cat, الاسم: e.name, المبلغ: e.amt }));
+      (d.income||[]).forEach(i => exportArr.push({ السنة: y, الشهر: MN[m], النوع: 'دخل', التصنيف: '-', الاسم: i.name, المبلغ: i.amt }));
+      (d.savings||[]).forEach(s => exportArr.push({ السنة: y, الشهر: MN[m], النوع: 'إدخار', التصنيف: '-', الاسم: s.name, المبلغ: s.amt }));
     });
   });
   if(exportArr.length === 0) return showToast("لا توجد بيانات للتصدير ⚠️");
@@ -568,9 +643,7 @@ window.importExcel = (e) => {
       const wb = XLSX.read(bstr, {type:'binary'});
       const wsname = wb.SheetNames[0];
       const data = XLSX.utils.sheet_to_json(wb.Sheets[wsname]);
-      showToast(`تم قراءة ${data.length} سجل. جاري الدمج...`);
-      // Here you would map the imported rows back to localData.budget based on your rules.
-      // (Simplified placeholder to avoid destructive overwrites of Firebase)
+      showToast(`تم قراءة ${data.length} سجل. يجب دمجها يدوياً لتفادي مسح البيانات.`);
     } catch(error) { showToast("فشل استيراد الملف ❌"); }
   };
   reader.readAsBinaryString(file);
@@ -588,6 +661,24 @@ window.exportToReels = () => {
     link.click();
     showToast("تم الحفظ بنجاح! جاهز للنشر 🚀");
   });
+};
+
+// --- WhatsApp Export ---
+window.doWhatsAppExport = () => {
+  let msg = "";
+  if(activeTab === 'month') {
+    const d = getMonthData(CY, CM);
+    msg = `💰 *تقرير ميزانية ${MN[CM]} ${CY}*\n\n🟢 الدخل: ${fmt(d.income.reduce((s,i)=>s+i.amt,0))}\n🔴 المصاريف: ${fmt(d.expense.reduce((s,i)=>s+i.amt,0))}\n🔹 المتبقي: ${fmt(d.income.reduce((s,i)=>s+i.amt,0)-d.expense.reduce((s,i)=>s+i.amt,0))}`;
+  } else if (activeTab === 'savings') {
+    let tS = 0;
+    Object.values(localData.budget).forEach(y => Object.values(y).forEach(m => tS += (m.savings||[]).reduce((s,i)=>s+i.amt,0)));
+    msg = `🏦 *تقرير المدخرات*\n\nإجمالي المدخرات الكلي: ${fmt(tS)}`;
+  } else if (activeTab === 'debt') {
+    msg = `🚩 *تقرير المديونية*\n\nمطلوب مني: ${document.getElementById('d-owe').textContent}\nمدين لي: ${document.getElementById('d-owed').textContent}`;
+  } else {
+    msg = `📊 *ملخص الميزانية التراكمي*\n\nالدخل: ${document.getElementById('o-inc').textContent}\nالمصاريف: ${document.getElementById('o-exp').textContent}\nالمتبقي: ${document.getElementById('o-left').textContent}`;
+  }
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
 };
 
 </script>
