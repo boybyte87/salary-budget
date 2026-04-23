@@ -3,293 +3,395 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ميزانية البيت - النسخة النهائية المضمونة</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+Arabic:wght@400;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+    <title>ميزانية البيت | Home Budget Pro</title>
     
-    <!-- Firebase Compat SDKs (The most stable way for single HTML files) -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <!-- Libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+    <script src="https://unpkg.com/lucide-react"></script>
+    <script src="https://unpkg.com/framer-motion/dist/framer-motion.js"></script>
+    
+    <!-- Firebase Compat -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&family=Playfair+Display:ital,wght@1,400;1,700&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'Inter', 'Noto Sans Arabic', sans-serif; background-color: #050505; color: #e0e0e0; direction: rtl; }
-        .font-serif { font-family: 'Playfair Display', serif; }
-        .pattern-dots { background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px); background-size: 20px 20px; }
-        .backdrop-blur-xl { backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+        :root { --font-arabic: 'Noto Sans Arabic', sans-serif; --font-fancy: 'Playfair Display', serif; }
+        body { font-family: var(--font-arabic); background-color: #050505; color: white; margin: 0; overflow-x: hidden; }
+        .font-fancy { font-family: var(--font-fancy); }
+        
+        .pattern-dots { background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 20px 20px; }
+        .pattern-grid { background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 30px 30px; }
+        
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-        .tab-active { background: white !important; color: black !important; font-weight: bold; transform: scale(1.05); }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease forwards; }
     </style>
 </head>
-<body class="pattern-dots min-h-screen transition-all duration-500">
+<body>
+    <div id="root"></div>
 
-<div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+        const { 
+            BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+            AreaChart, Area
+        } = Recharts;
+        const { 
+            Home, TrendingUp, CreditCard, PiggyBank, LogOut, 
+            ChevronRight, ChevronLeft, Plus, Trash2,
+            Share2, Palette, Activity, DollarSign
+        } = lucide;
+        const { motion, AnimatePresence } = FramerMotion;
 
-<!-- Libraries -->
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDMSFTbFGetq1WsCo-mVsNUbHVcqhC4Tow",
+            authDomain: "budget-home-1.firebaseapp.com",
+            projectId: "budget-home-1",
+            storageBucket: "budget-home-1.firebasestorage.app",
+            messagingSenderId: "1082972153053",
+            appId: "1:1082972153053:web:ba31f2c4da3cf95e35e734"
+        };
 
-<script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
-    const { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = Recharts;
-
-    // --- Firebase Initialization (Compat Mode) ---
-    const firebaseConfig = {
-        apiKey: "AIzaSyDMSFTbFGetq1WsCo-mVsNUbHVcqhC4Tow",
-        authDomain: "budget-home-1.firebaseapp.com",
-        projectId: "budget-home-1",
-        storageBucket: "budget-home-1.firebasestorage.app",
-        messagingSenderId: "1082972153053",
-        appId: "1:1082972153053:web:ba31f2c4da3cf95e35e734"
-    };
-
-    if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-    const googleProvider = new firebase.auth.GoogleAuthProvider();
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-    const MN = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-    const fmt = (v) => (v || 0).toLocaleString('ar-KW') + ' د.ك';
+        const MN = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+        const CATS = ['سكن', 'أكل وشرب', 'تنقل', 'تعليم', 'صحة', 'ترفيه', 'اشتراكات', 'تسوق', 'مدخرات', 'مصاريف متنوعة', 'أخرى'];
 
-    function App() {
-        const [user, setUser] = useState(null);
-        const [loading, setLoading] = useState(true);
-        const [appData, setAppData] = useState({ budget: {}, debt: { owe: [], owed: [] } });
-        const [curDate, setCurDate] = useState({ y: new Date().getFullYear(), m: new Date().getMonth() });
-        const [tab, setTab] = useState('month');
+        const formatCurrency = (val) => {
+            return new Intl.NumberFormat('ar-KW', { style: 'currency', currency: 'KWD' }).format(val || 0);
+        };
 
-        useEffect(() => {
-            return auth.onAuthStateChanged((u) => {
-                setUser(u);
-                setLoading(false);
-                if (u) {
-                    const unsub = db.collection('users').doc(u.uid).collection('data').doc('main')
-                        .onSnapshot((snap) => {
-                            if (snap.exists) {
-                                const d = snap.data();
-                                setAppData({
-                                    budget: JSON.parse(d.budget || '{}'),
-                                    debt: JSON.parse(d.debt || '{"owe":[],"owed":[]}')
-                                });
-                            }
-                        });
-                    return () => unsub();
+        function App() {
+            const [user, setUser] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [appData, setAppData] = useState({ budget: {}, debt: { owe: [], owed: [] } });
+            const [theme, setTheme] = useState('dark');
+            const [pattern, setPattern] = useState('dots');
+            const [currentTab, setCurrentTab] = useState('month');
+            const [curDate, setCurDate] = useState({ y: new Date().getFullYear(), m: new Date().getMonth() });
+            const [menuOpen, setMenuOpen] = useState(false);
+
+            useEffect(() => {
+                return auth.onAuthStateChanged((u) => {
+                    setUser(u);
+                    setLoading(false);
+                    if (u) {
+                        const unsubscribe = db.collection('users').doc(u.uid).collection('data').doc('main')
+                            .onSnapshot((snap) => {
+                                if (snap.exists) {
+                                    const d = snap.data();
+                                    setAppData({
+                                        budget: JSON.parse(d.budget || '{}'),
+                                        debt: JSON.parse(d.debt || '{"owe":[],"owed":[]}')
+                                    });
+                                }
+                            });
+                        return () => unsubscribe();
+                    }
+                });
+            }, []);
+
+            const saveToCloud = async (newData) => {
+                if (!user) return;
+                try {
+                    await db.collection('users').doc(user.uid).collection('data').doc('main').set({
+                        budget: JSON.stringify(newData.budget),
+                        debt: JSON.stringify(newData.debt),
+                        updatedAt: Date.now()
+                    });
+                } catch (e) {
+                    console.error("Save Error:", e);
                 }
-            });
-        }, []);
+            };
 
-        const saveToCloud = async (newData) => {
-            if (!user) return;
-            await db.collection('users').doc(user.uid).collection('data').doc('main').set({
-                budget: JSON.stringify(newData.budget),
-                debt: JSON.stringify(newData.debt),
-                updated: Date.now()
-            });
-        };
+            const monthData = useMemo(() => {
+                const yStr = curDate.y.toString();
+                const mStr = curDate.m.toString();
+                return appData.budget[yStr]?.[mStr] || { income: [], expense: [], savings: [] };
+            }, [appData.budget, curDate]);
 
-        const monthKey = `${curDate.y}-${curDate.m}`;
-        const mData = appData.budget[monthKey] || { income: [], expense: [], savings: [] };
-        
-        const summary = useMemo(() => {
-            const inc = mData.income.reduce((s, i) => s + i.amt, 0);
-            const exp = mData.expense.reduce((s, i) => s + i.amt, 0);
-            const sav = mData.savings.reduce((s, i) => s + i.amt, 0);
-            return { inc, exp, sav, left: inc - exp };
-        }, [mData]);
+            const mSummary = useMemo(() => {
+                const income = monthData.income.reduce((s, i) => s + i.amt, 0);
+                const expense = monthData.expense.reduce((s, i) => s + i.amt, 0);
+                const savings = monthData.savings.reduce((s, i) => s + i.amt, 0);
+                return { income, expense, remaining: income - expense, savings };
+            }, [monthData]);
 
-        const totalSavings = useMemo(() => {
-            let t = 0;
-            Object.values(appData.budget).forEach(yr => {
-                Object.values(yr).forEach(m => {
-                    t += (m.savings || []).reduce((s, i) => s + i.amt, 0);
+            const trendData = useMemo(() => {
+                const result = [];
+                Object.keys(appData.budget).sort().forEach(y => {
+                    Object.keys(appData.budget[y]).sort((a,b) => parseInt(a)-parseInt(b)).forEach(m => {
+                        const d = appData.budget[y][m];
+                        const inc = d.income.reduce((s, i) => s + i.amt, 0);
+                        const exp = d.expense.reduce((s, i) => s + i.amt, 0);
+                        const sav = d.savings.reduce((s, i) => s + i.amt, 0);
+                        if (inc === 0 && exp === 0 && sav === 0) return;
+                        result.push({
+                            name: `${MN[parseInt(m)]} ${y}`,
+                            short: `${MN[parseInt(m)]}`,
+                            دخل: inc,
+                            مصاريف: exp,
+                            مدخرات: sav,
+                            متبقي: inc - exp
+                        });
+                    });
                 });
-            });
-            return t;
-        }, [appData]);
+                return result;
+            }, [appData.budget]);
 
-        const trendData = useMemo(() => {
-            const res = [];
-            Object.keys(appData.budget).sort().forEach(k => {
-                const [y, m] = k.split('-');
-                const d = appData.budget[k];
-                res.push({
-                    name: `${MN[m]}`,
-                    دخل: d.income.reduce((s,i)=>s+i.amt,0),
-                    صرف: d.expense.reduce((s,i)=>s+i.amt,0)
+            const totalActualSavings = useMemo(() => {
+                let total = 0;
+                Object.values(appData.budget).forEach(yr => {
+                    Object.values(yr).forEach(m => {
+                        total += m.savings.reduce((s, i) => s + i.amt, 0);
+                    });
                 });
-            });
-            return res;
-        }, [appData]);
+                return total;
+            }, [appData.budget]);
 
-        const add = (type, name, amt) => {
-            const newData = { ...appData };
-            if (!newData.budget[monthKey]) newData.budget[monthKey] = { income: [], expense: [], savings: [] };
-            newData.budget[monthKey][type].push({ id: Date.now(), name, amt: parseFloat(amt) });
-            setAppData(newData);
-            saveToCloud(newData);
-        };
+            const handleSocialShare = (section) => {
+                let text = `*تقرير ${section}*\n📅 ${MN[curDate.m]} ${curDate.y}\n\n`;
+                if (section === 'الشهر الحالي') {
+                    text += `💰 الدخل: ${formatCurrency(mSummary.income)}\n`;
+                    text += `💸 المصاريف: ${formatCurrency(mSummary.expense)}\n`;
+                    text += `🏦 المتبقي: ${formatCurrency(mSummary.remaining)}\n`;
+                    text += `🎯 مدخرات الشهر: ${formatCurrency(mSummary.savings)}\n`;
+                } else if (section === 'المدخرات الكلية') {
+                    text += `🎯 إجمالي المدخرات الفعلية: ${formatCurrency(totalActualSavings)}\n`;
+                }
+                const link = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                window.open(link, '_blank');
+            };
 
-        const del = (type, id) => {
-            const newData = { ...appData };
-            newData.budget[monthKey][type] = newData.budget[monthKey][type].filter(i => i.id !== id);
-            setAppData(newData);
-            saveToCloud(newData);
-        };
+            const addEntry = (type, item) => {
+                const newData = { ...appData };
+                const y = curDate.y.toString(), m = curDate.m.toString();
+                if (!newData.budget[y]) newData.budget[y] = {};
+                if (!newData.budget[y][m]) newData.budget[y][m] = { income: [], expense: [], savings: [] };
+                newData.budget[y][m][type].push({ id: Date.now(), ...item });
+                setAppData(newData);
+                saveToCloud(newData);
+            };
 
-        const shareWA = (sect) => {
-            let t = `*تقرير ميزانية البيت (${sect})*\n📅 ${MN[curDate.m]} ${curDate.y}\n`;
-            if(sect==='المدخرات') t += `🎯 إجمالي المدخرات الفعلية: ${fmt(totalSavings)}`;
-            else t += `💰 دخل: ${fmt(summary.inc)}\n💸 مصروف: ${fmt(summary.exp)}\n🏦 متبقي: ${fmt(summary.left)}`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(t)}`, '_blank');
-        };
+            const removeEntry = (type, id) => {
+                const newData = { ...appData };
+                const y = curDate.y.toString(), m = curDate.m.toString();
+                if (newData.budget[y]?.[m]) {
+                    newData.budget[y][m][type] = newData.budget[y][m][type].filter(i => i.id !== id);
+                    setAppData(newData);
+                    saveToCloud(newData);
+                }
+            };
 
-        if (loading) return <div className="h-screen flex items-center justify-center italic opacity-30">جاري الاتصال بالسحابة...</div>;
+            if (loading) return <div className="h-screen flex items-center justify-center font-fancy italic text-white/40">جاري الاتصال...</div>;
 
-        if (!user) {
+            if (!user) {
+                return (
+                    <div className="h-screen flex flex-col items-center justify-center p-6 bg-[#050505]">
+                        <div className="w-full max-w-sm bg-white/[0.03] border border-white/10 rounded-[3rem] p-10 text-center animate-fade-in shadow-2xl">
+                            <div className="w-16 h-16 bg-white mx-auto flex items-center justify-center rounded-2xl mb-6 shadow-xl text-black"><DollarSign size={32} /></div>
+                            <h1 className="text-3xl font-fancy italic mb-2 tracking-tight">ميزانية البيت</h1>
+                            <p className="text-white/30 text-[10px] uppercase tracking-widest mb-10">Premium Cloud Sync</p>
+                            <button onClick={() => auth.signInWithPopup(googleProvider)} className="w-full bg-white text-black py-4 rounded-2xl font-bold transition-transform active:scale-95 shadow-lg">الدخول بحساب Google</button>
+                        </div>
+                    </div>
+                );
+            }
+
+            const bgClasses = `min-h-screen pb-32 transition-colors duration-500 overflow-x-hidden ${theme === 'dark' ? 'bg-[#1c1c1a]' : theme === 'navy' ? 'bg-[#0d1b2a]' : theme === 'black' ? 'bg-[#000000]' : 'bg-[#444444]'} ${pattern === 'dots' ? 'pattern-dots' : pattern === 'grid' ? 'pattern-grid' : ''}`;
+
             return (
-                <div className="h-screen flex flex-col items-center justify-center bg-[#050505] p-6">
-                    <div className="bg-white/5 border border-white/10 rounded-[3rem] p-12 text-center max-w-sm w-full shadow-2xl">
-                        <div className="text-5xl mb-6">🏠</div>
-                        <h1 className="text-2xl font-serif italic mb-2 tracking-tight">ميزانية البيت</h1>
-                        <p className="text-white/30 text-[10px] uppercase tracking-widest mb-10">Cloud Storage Enabled</p>
-                        <button onClick={() => auth.signInWithPopup(googleProvider)} className="w-full bg-white text-black py-4 rounded-2xl font-bold transition-transform active:scale-95 shadow-xl">تسجيل الدخول بـ Google</button>
+                <div className={bgClasses}>
+                    <header className="sticky top-0 z-40 bg-black/40 backdrop-blur-xl border-b border-white/10 p-4 md:px-8">
+                        <div className="max-w-4xl mx-auto flex justify-between items-center">
+                            <div className="flex items-center gap-4">
+                                <img src={user.photoURL} className="w-10 h-10 rounded-full border border-white/20 cursor-pointer" onClick={() => setMenuOpen(!menuOpen)} alt="pic" />
+                                <div>
+                                    <h1 className="text-xs font-fancy italic text-white/80 leading-none">ميزانية {user.displayName}</h1>
+                                    <span className="text-[9px] opacity-30 uppercase tracking-widest">Active System</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full border border-white/10 text-xs font-bold">
+                                <button onClick={() => { let m=curDate.m-1,y=curDate.y; if(m<0){m=11;y--;} setCurDate({y,m}); }} className="opacity-40 hover:opacity-100">›</button>
+                                <span className="w-24 text-center">{MN[curDate.m]} {curDate.y}</span>
+                                <button onClick={() => { let m=curDate.m+1,y=curDate.y; if(m>11){m=0;y++;} setCurDate({y,m}); }} className="opacity-40 hover:opacity-100">‹</button>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Simple Menu Modal */}
+                    <AnimatePresence>
+                        {menuOpen && (
+                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed inset-x-4 top-20 z-50 p-6 bg-[#0a0a0a] border border-white/10 rounded-[2rem] shadow-2xl max-w-sm mx-auto text-center">
+                                <h3 className="text-xs font-bold mb-6 text-white/60">تخصيص المظهر</h3>
+                                <div className="flex justify-center gap-4 mb-8">
+                                    {['dark', 'navy', 'black', 'gray'].map((t) => (
+                                        <button key={t} onClick={() => setTheme(t)} className={`w-8 h-8 rounded-full border-2 transition-transform ${theme === t ? 'border-white scale-110' : 'border-transparent'}`} style={{ backgroundColor: t === 'dark' ? '#1c1c1a' : t === 'navy' ? '#0d1b2a' : t === 'black' ? '#000' : '#444' }} />
+                                    ))}
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 mb-8 text-black">
+                                    {['none', 'dots', 'grid'].map((p) => (
+                                        <button key={p} onClick={() => setPattern(p)} className={`text-[10px] py-2 border rounded-xl transition-colors ${pattern === p ? 'bg-white text-black border-white' : 'border-white/10 text-white opacity-40'}`}>{p}</button>
+                                    ))}
+                                </div>
+                                <button onClick={() => auth.signOut()} className="w-full text-red-500 py-4 text-xs font-bold border-t border-white/5 flex items-center justify-center gap-2 mt-4 hover:bg-red-500/5 transition-colors rounded-xl">تسجيل الخروج <LogOut size={14} /></button>
+                                <button onClick={() => setMenuOpen(false)} className="mt-4 text-[10px] opacity-30 cursor-pointer">إغلاق القائمة</button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <main className="max-w-4xl mx-auto p-4 md:p-8 animate-fade-in">
+                        {currentTab === 'month' && (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <StatBox label="المدخول" val={mSummary.income} color="text-green-400" />
+                                    <StatBox label="المصاريف" val={mSummary.expense} color="text-red-400" />
+                                    <StatBox label="المتبقي" val={mSummary.remaining} color="text-blue-400" sub="الدخل - المصاريف" />
+                                    <StatBox label="مدخرات الشهر" val={mSummary.savings} color="text-amber-400" />
+                                </div>
+                                <ShareRow on={() => handleSocialShare('الشهر الحالي')} />
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    <DataCard title="مصادر الدخل" items={monthData.income} onAdd={(n,a)=>addEntry('income',{name:n,amt:a})} onDel={(id)=>removeEntry('income',id)} color="text-green-400" />
+                                    <DataCard title="المصاريف" items={monthData.expense} onAdd={(n,a,c)=>addEntry('expense',{name:n,amt:a,cat:c})} onDel={(id)=>removeEntry('expense',id)} color="text-red-400" hasCat />
+                                </div>
+                            </div>
+                        )}
+
+                        {currentTab === 'savings' && (
+                            <div className="space-y-6">
+                                <StatBox label="إجمالي المدخرات الفعلية" val={totalActualSavings} color="text-amber-400" sub="مجموع كافة الأشهر السحابية" large />
+                                <ShareRow on={() => handleSocialShare('المدخرات الكلية')} />
+                                <DataCard title="قسم المدخرات اليدوية" items={monthData.savings} onAdd={(n,a)=>addEntry('savings',{name:n,amt:a})} onDel={(id)=>removeEntry('savings',id)} color="text-amber-400" />
+                                <div className="bg-gradient-to-br from-amber-500/10 to-transparent border border-amber-500/10 rounded-[3rem] p-10 text-center">
+                                    <h3 className="text-lg font-fancy italic text-white mb-2">استمر في التوفير</h3>
+                                    <p className="text-[10px] text-white/40 leading-relaxed max-w-xs mx-auto uppercase tracking-widest">Saving for a better future</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {currentTab === 'overview' && (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <StatBox label="إجمالي الدخل" val={trendData.reduce((s,d)=>s+d.دخل,0)} color="text-green-400" />
+                                    <StatBox label="إجمالي المصاريف" val={trendData.reduce((s,d)=>s+d.مصاريف,0)} color="text-red-400" />
+                                    <StatBox label="المتبقي الكلي" val={trendData.reduce((s,d)=>s+d.متبقي,0)} color="text-blue-400" />
+                                    <StatBox label="صافي المدخرات" val={totalActualSavings} color="text-amber-400" />
+                                </div>
+                                <div className="bg-white/[0.03] border border-white/10 rounded-[3rem] p-8 h-80 shadow-inner">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={trendData}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                                            <XAxis dataKey="short" fontSize={10} stroke="rgba(255,255,255,0.2)" />
+                                            <YAxis fontSize={9} stroke="rgba(255,255,255,0.2)" />
+                                            <Tooltip contentStyle={{ backgroundColor:'#050505', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'16px' }} />
+                                            <Area type="monotone" dataKey="دخل" stroke="#1D9E75" fill="#1D9E75" fillOpacity={0.1} />
+                                            <Area type="monotone" dataKey="مصاريف" stroke="#D85A30" fill="#D85A30" fillOpacity={0.1} />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-black/60 backdrop-blur-xl border border-white/10 rounded-full p-2 flex justify-around items-center shadow-2xl">
+                        <NavTab act={currentTab==='month'} click={()=>setCurrentTab('month')} label="الشهر" icon={<Home size={18} />} />
+                        <NavTab act={currentTab==='overview'} click={()=>setCurrentTab('overview')} label="الإجمالي" icon={<Activity size={18} />} />
+                        <NavTab act={currentTab==='savings'} click={()=>setCurrentTab('savings')} label="المدخرات" icon={<PiggyBank size={18} />} />
+                    </nav>
+                </div>
+            );
+        }
+
+        function StatBox({ label, val, color, sub, large }) {
+            return (
+                <div className={`bg-white/[0.03] border border-white/5 rounded-[2rem] p-6 flex flex-col justify-between transition-transform hover:scale-[1.02] ${large ? 'h-48' : 'h-36'}`}>
+                    <span className="text-[9px] font-bold uppercase tracking-widest opacity-30">{label}</span>
+                    <div>
+                        <div className={`font-fancy italic truncate ${color} ${large ? 'text-4xl' : 'text-2xl'}`}>{formatCurrency(val)}</div>
+                        {sub && <div className="text-[9px] opacity-20 uppercase mt-1 tracking-tight">{sub}</div>}
                     </div>
                 </div>
             );
         }
 
-        return (
-            <div className="max-w-4xl mx-auto p-4 md:p-8 pb-32">
-                <header className="flex justify-between items-center mb-8 bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <img src={user.photoURL} className="w-10 h-10 rounded-full border border-white/20" />
-                        <div>
-                            <div className="text-xs font-bold font-serif italic">ميزانية {user.displayName}</div>
-                            <div className="text-[9px] opacity-30 leading-none">مزامنة سحابية نشطة</div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3 bg-black/50 px-4 py-2 rounded-full border border-white/10 text-xs font-bold">
-                        <button onClick={() => setCur(p => { let m=p.m-1,y=p.y; if(m<0){m=11;y--} return {y,m}})}>›</button>
-                        <span className="w-24 text-center">{MN[curDate.m]} {curDate.y}</span>
-                        <button onClick={() => setCur(p => { let m=p.m+1,y=p.y; if(m>11){m=0;y++} return {y,m}})}>‹</button>
-                    </div>
-                </header>
+        function DataCard({ title, items, onAdd, onDel, color, hasCat }) {
+            const [name, setName] = useState('');
+            const [amt, setAmt] = useState('');
+            const [cat, setCat] = useState(CATS[1]);
+            const sub = (e) => { e.preventDefault(); if(name && amt) { onAdd(name, parseFloat(amt), hasCat ? cat : undefined); setName(''); setAmt(''); } };
+            const total = items.reduce((s, i) => s + i.amt, 0);
 
-                {tab === 'month' && (
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <Stat label="المدخول" val={summary.inc} color="text-green-400" />
-                            <Stat label="المصاريف" val={summary.exp} color="text-red-400" />
-                            <Stat label="المتبقي" val={summary.left} color="text-blue-400" sub="صافي الميزانية" />
-                            <Stat label="مدخرات الشهر" val={summary.sav} color="text-amber-400" />
-                        </div>
-                        <div className="flex justify-between items-center bg-white/5 border border-white/10 p-4 rounded-2xl">
-                             <span className="text-[10px] font-bold opacity-30 tracking-[0.2em] uppercase">تصدير التقارير</span>
-                             <button onClick={() => shareWA('الشهر')} className="bg-green-600/20 text-green-400 px-6 py-2 rounded-xl text-[10px] font-bold border border-green-500/20">واتساب الشهر</button>
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-8">
-                            <Box title="الدخل" items={mData.income} total={summary.inc} color="text-green-400" onAdd={(n,a)=>add('income',n,a)} onDel={id=>del('income',id)} />
-                            <Box title="المصاريف" items={mData.expense} total={summary.exp} color="text-red-400" onAdd={(n,a)=>add('expense',n,a)} onDel={id=>del('expense',id)} />
-                        </div>
+            return (
+                <div className="bg-white/[0.03] border border-white/10 rounded-[3rem] overflow-hidden flex flex-col shadow-lg">
+                    <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
+                        <span className="text-xs font-bold uppercase tracking-widest text-white/70">{title}</span>
+                        <span className="text-xs font-fancy italic text-white/30">{formatCurrency(total)}</span>
                     </div>
-                )}
-
-                {tab === 'savings' && (
-                    <div className="space-y-6">
-                        <Stat label="صافي المدخرات الكلي" val={totalSavings} color="text-amber-400" sub="مجموع كل الفترات" large />
-                        <div className="flex justify-end p-2">
-                             <button onClick={() => shareWA('المدخرات')} className="bg-green-600/20 text-green-400 px-6 py-2 rounded-xl border border-green-500/20 text-[10px] font-bold">مشاركة المدخرات واتساب</button>
-                        </div>
-                        <Box title="المدخرات اليدوية" items={mData.savings} total={summary.sav} color="text-amber-400" onAdd={(n,a)=>add('savings',n,a)} onDel={id=>del('savings',id)} />
-                    </div>
-                )}
-
-                {tab === 'overview' && (
-                    <div className="space-y-6">
-                         {trendData.length > 0 && (
-                            <div className="bg-white/5 border border-white/10 rounded-[3rem] p-6 h-80">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={trendData}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                                        <XAxis dataKey="name" fontSize={10} stroke="rgba(255,255,255,0.1)" />
-                                        <YAxis fontSize={10} stroke="rgba(255,255,255,0.1)" />
-                                        <Tooltip contentStyle={{backgroundColor:'#000', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'12px'}} />
-                                        <Area type="monotone" dataKey="دخل" stroke="#4ade80" fill="#4ade80" fillOpacity={0.1} />
-                                        <Area type="monotone" dataKey="صرف" stroke="#f87171" fill="#f87171" fillOpacity={0.1} />
-                                    </AreaChart>
-                                </ResponsiveContainer>
+                    <div className="divide-y divide-white/5 max-h-72 overflow-y-auto custom-scrollbar">
+                        {items.length === 0 && <div className="py-16 text-center text-xs opacity-10 italic">لا توجد سجلات بعد...</div>}
+                        {items.map((i) => (
+                            <div key={i.id} className="p-4 flex justify-between items-center hover:bg-white/[0.02] group transition-colors">
+                                <div>
+                                    <span className="text-xs block">{i.name}</span>
+                                    {i.cat && <span className="text-[9px] text-white/20 uppercase tracking-tighter">{i.cat}</span>}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className={`text-[11px] font-bold font-fancy italic ${color}`}>{formatCurrency(i.amt)}</span>
+                                    <button onClick={() => onDel(i.id)} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"><Trash2 size={12} /></button>
+                                </div>
                             </div>
+                        ))}
+                    </div>
+                    <form onSubmit={sub} className="p-4 bg-white/[0.04] flex flex-col gap-2 border-t border-white/5">
+                        <div className="flex gap-2">
+                            <input className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs focus:border-white/30 outline-none" placeholder="البند" value={name} onChange={e=>setName(e.target.value)} />
+                            <input className="w-24 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs focus:border-white/30 outline-none" placeholder="0" type="number" value={amt} onChange={e=>setAmt(e.target.value)} />
+                        </div>
+                        {hasCat && (
+                            <select className="bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-xs text-white/60 outline-none" value={cat} onChange={e=>setCat(e.target.value)}>
+                                {CATS.map(c => <option key={c} value={c} className="bg-black">{c}</option>)}
+                            </select>
                         )}
-                        <div className="flex flex-col gap-4">
-                            <button onClick={() => auth.signOut()} className="w-full bg-red-500/10 text-red-500 py-4 rounded-3xl border border-red-500/20 text-sm font-bold">تسجيل الخروج</button>
-                        </div>
-                    </div>
-                ) }
-
-                <footer className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-black/60 backdrop-blur-xl border border-white/10 rounded-full p-2 flex justify-around items-center shadow-2xl z-50">
-                    <NavBtn act={tab==='month'} click={()=>setTab('month')} label="الشهر" />
-                    <NavBtn act={tab==='savings'} click={()=>setTab('savings')} label="المدخرات" />
-                    <NavBtn act={tab==='overview'} click={()=>setTab('overview')} label="الإجمالي" />
-                </footer >
-            </div>
-        );
-    }
-
-    function Stat({ label, val, color, sub, large }) {
-        return (
-            <div className={`bg-white/[0.03] border border-white/5 rounded-[2rem] p-5 flex flex-col justify-between ${large?'h-48':'h-36'}`}>
-                <span className="text-[9px] font-bold opacity-30 uppercase tracking-widest">{label}</span>
-                <div>
-                   <div className={`text-xl font-serif italic truncate ${color} ${large?'text-4xl':''}`}>{fmt(val)}</div>
-                   {sub && <div className="text-[9px] opacity-10 uppercase mt-1 tracking-tight">{sub}</div>}
+                        <button type="submit" className="bg-white text-black py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg">إضافة السجل</button>
+                    </form>
                 </div>
-            </div>
-        );
-    }
+            );
+        }
 
-    function Box({ title, items, total, onAdd, onDel, color }) {
-        const [n, setN] = useState('');
-        const [a, setA] = useState('');
-        return (
-            <div className="bg-white/[0.03] border border-white/10 rounded-[2.5rem] overflow-hidden flex flex-col">
-                <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
-                    <span className="text-xs font-bold uppercase tracking-widest">{title}</span>
-                    <span className="text-xs opacity-30 font-serif italic">{fmt(total)}</span>
-                </div>
-                <div className="divide-y divide-white/5 max-h-64 overflow-y-auto custom-scrollbar">
-                    {items.length === 0 && <div className="py-12 text-center text-xs opacity-10 italic">لا توجد سجلات...</div>}
-                    {items.map(i => (
-                        <div key={i.id} className="p-4 flex justify-between items-center hover:bg-white/[0.02] group">
-                            <span className="text-xs">{i.name}</span>
-                            <div className="flex items-center gap-3">
-                                <span className={`text-[11px] font-bold ${color}`}>{fmt(i.amt)}</span>
-                                <button onClick={()=>onDel(i.id)} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity text-[10px]">✕</button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-                <div className="p-4 bg-white/[0.05] grid gap-2">
-                    <div className="flex gap-2">
-                        <input className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs" placeholder="البند" value={n} onChange={e=>setN(e.target.value)} />
-                        <input className="w-24 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs" placeholder="0" type="number" value={a} onChange={e=>setA(e.target.value)} />
-                    </div>
-                    <button onClick={()=>{if(n&&a){onAdd(n,a);setN('');setA('')}}} className="bg-white text-black py-2 rounded-xl text-[10px] font-bold">إضافة</button>
-                </div>
-            </div>
-        );
-    }
+        function NavTab({ act, click, label, icon }) {
+            return (
+                <button onClick={click} className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-full transition-all ${act ? 'bg-white text-black scale-105 shadow-xl' : 'text-white/30 hover:text-white'}`}>
+                    {icon}
+                    <span className="text-[9px] font-bold uppercase tracking-tighter">{label}</span>
+                </button>
+            );
+        }
 
-    function NavBtn({ act, click, label }) {
-        return <button onClick={click} className={`flex-1 py-3 text-[10px] font-bold rounded-full transition-all ${act?'tab-active shadow-2xl':'text-white/20 hover:text-white'}`}>{label}</button>;
-    }
+        function ShareRow({ on }) {
+            return (
+                <div className="flex justify-between items-center bg-white/[0.03] border border-white/10 p-4 rounded-2xl shadow-sm">
+                    <span className="text-[10px] font-bold opacity-30 uppercase tracking-widest">تصدير لملخص واتساب</span>
+                    <button onClick={on} className="bg-green-600/20 text-green-400 border border-green-500/20 px-6 py-2 rounded-xl text-[10px] font-bold hover:bg-green-600/30 transition-colors uppercase">واتساب</button>
+                </div>
+            );
+        }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-</script>
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
