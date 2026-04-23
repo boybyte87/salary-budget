@@ -11,7 +11,6 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/react-is@18.2.0/umd/react-is.production.min.js"></script>
-    <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
     <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
@@ -27,7 +26,6 @@
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
         .tab-active { background: white !important; color: black !important; font-weight: bold; transform: scale(1.05); }
-        
         .bg-overlay {
             position: fixed; inset: 0; background-size: cover; background-position: center;
             opacity: 0.15; z-index: -1; transition: background-image 0.5s ease;
@@ -40,10 +38,9 @@
 
 <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
-    // تأمين المكتبة عشان ما تعطي شاشة سودة لو تأخر التحميل
     const { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = window.Recharts || {};
 
-    // --- Firebase Initialization ---
+    // --- إعدادات قاعدة البيانات (Firebase) ---
     const firebaseConfig = {
         apiKey: "AIzaSyDMSFTbFGetq1WsCo-mVsNUbHVcqhC4Tow",
         authDomain: "budget-home-1.firebaseapp.com",
@@ -71,24 +68,36 @@
         const [bgImg, setBgImg] = useState(localStorage.getItem('budget-bg') || '');
         const [editModal, setEditModal] = useState(null);
 
+        // --- الاتصال الآمن بالسحابة واسترجاع البيانات القديمة ---
         useEffect(() => {
-            return auth.onAuthStateChanged((u) => {
+            let unsubData = null;
+            const unsubAuth = auth.onAuthStateChanged((u) => {
                 setUser(u);
-                setLoading(false);
                 if (u) {
-                    const unsub = db.collection('users').doc(u.uid).collection('data').doc('main')
+                    unsubData = db.collection('users').doc(u.uid).collection('data').doc('main')
                         .onSnapshot((snap) => {
                             if (snap.exists) {
                                 const d = snap.data();
-                                setAppData({
-                                    budget: JSON.parse(d.budget || '{}'),
-                                    debt: JSON.parse(d.debt || '{"owe":[],"owed":[]}')
-                                });
+                                let parsedBudget = {};
+                                let parsedDebt = { owe: [], owed: [] };
+                                try { parsedBudget = JSON.parse(d.budget || '{}'); } catch(e) {}
+                                try { parsedDebt = JSON.parse(d.debt || '{"owe":[],"owed":[]}'); } catch(e) {}
+                                setAppData({ budget: parsedBudget, debt: parsedDebt });
                             }
+                            setLoading(false);
+                        }, (err) => {
+                            console.error("خطأ بالاتصال:", err);
+                            setLoading(false);
                         });
-                    return () => unsub();
+                } else {
+                    setLoading(false);
+                    if(unsubData) unsubData();
                 }
             });
+            return () => {
+                unsubAuth();
+                if(unsubData) unsubData();
+            };
         }, []);
 
         const saveToCloud = async (newData) => {
@@ -113,33 +122,37 @@
             }
         };
 
-        const monthKey = `${curDate.y}-${curDate.m}`;
-        const mData = appData.budget[monthKey] || { income: [], expense: [], savings: [] };
+        // --- معالجة البيانات بأمان مضاد للشاشة السودة ---
+        const mDataRaw = (appData.budget[curDate.y] && appData.budget[curDate.y][curDate.m]) ? appData.budget[curDate.y][curDate.m] : {};
+        const safeIncome = mDataRaw.income || [];
+        const safeExpense = mDataRaw.expense || [];
+        const safeSavings = mDataRaw.savings || [];
 
         const summary = useMemo(() => {
-            const inc = mData.income.reduce((s, i) => s + i.amt, 0);
-            const exp = mData.expense.reduce((s, i) => s + i.amt, 0);
-            const sav = mData.savings.reduce((s, i) => s + i.amt, 0);
+            const inc = safeIncome.reduce((s, i) => s + (i.amt||0), 0);
+            const exp = safeExpense.reduce((s, i) => s + (i.amt||0), 0);
+            const sav = safeSavings.reduce((s, i) => s + (i.amt||0), 0);
             return { inc, exp, sav, left: inc - exp };
-        }, [mData]);
+        }, [safeIncome, safeExpense, safeSavings]);
 
         const totalSavings = useMemo(() => {
             let t = 0;
-            Object.values(appData.budget).forEach(yr => {
-                Object.values(yr).forEach(m => { t += (m.savings || []).reduce((s, i) => s + i.amt, 0); });
+            Object.values(appData.budget || {}).forEach(yr => {
+                Object.values(yr || {}).forEach(m => { t += (m.savings || []).reduce((s, i) => s + (i.amt||0), 0); });
             });
             return t;
         }, [appData]);
 
         const trendData = useMemo(() => {
             const res = [];
-            Object.keys(appData.budget).sort().forEach(k => {
-                const parts = k.split('-');
-                const d = appData.budget[k];
-                res.push({
-                    name: MN[parts[1]] + ' ' + String(parts[0]).substring(2),
-                    دخل: d.income.reduce((s,i)=>s+i.amt,0),
-                    صرف: d.expense.reduce((s,i)=>s+i.amt,0)
+            Object.keys(appData.budget || {}).sort().forEach(y => {
+                Object.keys(appData.budget[y] || {}).sort((a,b)=>Number(a)-Number(b)).forEach(m => {
+                    const d = appData.budget[y][m] || {};
+                    res.push({
+                        name: MN[m] + ' ' + String(y).substring(2),
+                        دخل: (d.income || []).reduce((s,i)=>s+(i.amt||0),0),
+                        صرف: (d.expense || []).reduce((s,i)=>s+(i.amt||0),0)
+                    });
                 });
             });
             return res;
@@ -147,36 +160,42 @@
 
         const getHistory = (type) => {
             const set = new Set();
-            Object.values(appData.budget).forEach(yr => {
-                Object.values(yr).forEach(m => { (m[type]||[]).forEach(i => set.add(i.name)); });
+            Object.values(appData.budget || {}).forEach(yr => {
+                Object.values(yr || {}).forEach(m => { ((m||{})[type]||[]).forEach(i => { if(i.name) set.add(i.name); }); });
             });
             return Array.from(set);
         };
 
         // --- Budget Actions ---
         const addRecord = (type, name, amt, cat) => {
-            const newData = { ...appData };
-            if (!newData.budget[monthKey]) newData.budget[monthKey] = { income: [], expense: [], savings: [] };
-            newData.budget[monthKey][type].push({ id: Date.now(), name, amt: parseFloat(amt), cat });
+            const newData = JSON.parse(JSON.stringify(appData));
+            if (!newData.budget[curDate.y]) newData.budget[curDate.y] = {};
+            if (!newData.budget[curDate.y][curDate.m]) newData.budget[curDate.y][curDate.m] = { income: [], expense: [], savings: [] };
+            if (!newData.budget[curDate.y][curDate.m][type]) newData.budget[curDate.y][curDate.m][type] = [];
+            
+            newData.budget[curDate.y][curDate.m][type].push({ id: Date.now(), name, amt: parseFloat(amt), cat });
             saveToCloud(newData);
         };
 
         const delRecord = (type, id) => {
             if(!window.confirm('متأكد تبي تحذف السجل؟')) return;
-            const newData = { ...appData };
-            newData.budget[monthKey][type] = newData.budget[monthKey][type].filter(i => i.id !== id);
-            saveToCloud(newData);
+            const newData = JSON.parse(JSON.stringify(appData));
+            if (newData.budget[curDate.y] && newData.budget[curDate.y][curDate.m] && newData.budget[curDate.y][curDate.m][type]) {
+                newData.budget[curDate.y][curDate.m][type] = newData.budget[curDate.y][curDate.m][type].filter(i => i.id !== id);
+                saveToCloud(newData);
+            }
         };
 
-        // --- Edit Modal Actions ---
         const saveEdit = (updatedItem) => {
-            const newData = { ...appData };
+            const newData = JSON.parse(JSON.stringify(appData));
             if (editModal.target === 'budget') {
-                const arr = newData.budget[editModal.monthKey][editModal.type];
-                const idx = arr.findIndex(i => i.id === updatedItem.id);
-                if(idx > -1) arr[idx] = updatedItem;
+                if(newData.budget[editModal.y] && newData.budget[editModal.y][editModal.m]) {
+                    const arr = newData.budget[editModal.y][editModal.m][editModal.type] || [];
+                    const idx = arr.findIndex(i => i.id === updatedItem.id);
+                    if(idx > -1) arr[idx] = updatedItem;
+                }
             } else if (editModal.target === 'debt') {
-                const arr = newData.debt[editModal.type];
+                const arr = newData.debt[editModal.type] || [];
                 const idx = arr.findIndex(i => i.id === updatedItem.id);
                 if(idx > -1) arr[idx] = updatedItem;
             }
@@ -191,19 +210,19 @@
                 t += `🎯 إجمالي المدخرات الفعلية: ${fmt(totalSavings)}`;
             } else if (sect === 'الديون') {
                 t += `⚠️ *مطلوب مني:*\n`;
-                appData.debt.owe.forEach(d => {
-                    const pd = d.payments.reduce((s,p)=>s+p.amt,0);
+                (appData.debt.owe||[]).forEach(d => {
+                    const pd = (d.payments||[]).reduce((s,p)=>s+p.amt,0);
                     t += `• لـ ${d.person}: ${fmt(d.amt - pd)}\n`;
                 });
                 t += `\n✅ *مدين لي:*\n`;
-                appData.debt.owed.forEach(d => {
-                    const pd = d.payments.reduce((s,p)=>s+p.amt,0);
+                (appData.debt.owed||[]).forEach(d => {
+                    const pd = (d.payments||[]).reduce((s,p)=>s+p.amt,0);
                     t += `• من ${d.person}: ${fmt(d.amt - pd)}\n`;
                 });
             } else if (sect === 'الإجمالي') {
                 let tI=0, tE=0;
-                Object.values(appData.budget).forEach(y => Object.values(y).forEach(m => {
-                    tI += m.income.reduce((s,i)=>s+i.amt,0); tE += m.expense.reduce((s,i)=>s+i.amt,0);
+                Object.values(appData.budget||{}).forEach(y => Object.values(y||{}).forEach(m => {
+                    tI += (m.income||[]).reduce((s,i)=>s+i.amt,0); tE += (m.expense||[]).reduce((s,i)=>s+i.amt,0);
                 }));
                 t = `📊 *الإجمالي التراكمي*\n\n🟢 الدخل الكلي: ${fmt(tI)}\n🔴 الصرف الكلي: ${fmt(tE)}\n🔹 الفائض: ${fmt(tI-tE)}\n🏦 المدخرات: ${fmt(totalSavings)}`;
             } else {
@@ -215,23 +234,21 @@
         // --- Excel Export & Import ---
         const exportExcel = () => {
             const wb = XLSX.utils.book_new();
-            Object.keys(appData.budget).sort().forEach(y => {
-                [0,1,2,3,4,5,6,7,8,9,10,11].forEach(m => {
-                    const k = `${y}-${m}`;
-                    if(!appData.budget[k]) return;
-                    const d = appData.budget[k];
-                    const tI = d.income.reduce((s,i)=>s+i.amt,0);
-                    const tE = d.expense.reduce((s,i)=>s+i.amt,0);
+            Object.keys(appData.budget || {}).sort().forEach(y => {
+                Object.keys(appData.budget[y] || {}).sort((a,b)=>Number(a)-Number(b)).forEach(m => {
+                    const d = appData.budget[y][m];
+                    const tI = (d.income||[]).reduce((s,i)=>s+i.amt,0);
+                    const tE = (d.expense||[]).reduce((s,i)=>s+i.amt,0);
                     if(tI===0 && tE===0) return;
                     const rows = [[`ميزانية ${MN[m]} ${y}`], []];
                     rows.push(['── المدخول ──'], ['البند', 'المبلغ (د.ك)']);
-                    d.income.forEach(i => rows.push([i.name, i.amt]));
+                    (d.income||[]).forEach(i => rows.push([i.name, i.amt]));
                     rows.push(['إجمالي المدخول', tI], []);
                     rows.push(['── المصاريف ──'], ['البند', 'الفئة', 'المبلغ (د.ك)']);
-                    d.expense.forEach(i => rows.push([i.name, i.cat||'', i.amt]));
+                    (d.expense||[]).forEach(i => rows.push([i.name, i.cat||'', i.amt]));
                     rows.push(['إجمالي المصاريف', '', tE], []);
                     rows.push(['── المدخرات ──'], ['البند', 'المبلغ (د.ك)']);
-                    d.savings.forEach(i => rows.push([i.name, i.amt]));
+                    (d.savings||[]).forEach(i => rows.push([i.name, i.amt]));
                     rows.push([], ['المدخول', tI], ['المصاريف', tE], ['المتبقي', tI-tE]);
                     const ws = XLSX.utils.aoa_to_sheet(rows);
                     ws['!cols'] = [{wch:28},{wch:16},{wch:16}];
@@ -239,8 +256,8 @@
                 });
             });
             const debtRows = [['المديونيات'], [], ['النوع', 'الشخص', 'السبب', 'المبلغ الأصلي', 'المدفوع', 'المتبقي']];
-            appData.debt.owe.forEach(d => { const p = d.payments.reduce((s,x)=>s+x.amt,0); debtRows.push(['مطلوب مني', d.person, d.reason||'', d.amt, p, d.amt-p]); });
-            appData.debt.owed.forEach(d => { const p = d.payments.reduce((s,x)=>s+x.amt,0); debtRows.push(['مدين لي', d.person, d.reason||'', d.amt, p, d.amt-p]); });
+            (appData.debt.owe||[]).forEach(d => { const p = (d.payments||[]).reduce((s,x)=>s+x.amt,0); debtRows.push(['مطلوب مني', d.person, d.reason||'', d.amt, p, d.amt-p]); });
+            (appData.debt.owed||[]).forEach(d => { const p = (d.payments||[]).reduce((s,x)=>s+x.amt,0); debtRows.push(['مدين لي', d.person, d.reason||'', d.amt, p, d.amt-p]); });
             const wsDebt = XLSX.utils.aoa_to_sheet(debtRows);
             wsDebt['!cols'] = [{wch:14},{wch:16},{wch:24},{wch:14},{wch:14},{wch:14}];
             XLSX.utils.book_append_sheet(wb, wsDebt, "الديون");
@@ -254,14 +271,15 @@
             reader.onload = (ev) => {
                 try {
                     const wb = XLSX.read(ev.target.result, {type: 'array'});
-                    const newData = {...appData};
+                    const newData = JSON.parse(JSON.stringify(appData));
                     let imported = 0;
                     wb.SheetNames.forEach(sn => {
                         const mi = MN.findIndex(m => sn.startsWith(m));
                         const ym = sn.match(/(\d{4})/);
                         if(mi !== -1 && ym) {
-                            const y = parseInt(ym[1]), m = mi, k = `${y}-${m}`;
-                            if(!newData.budget[k]) newData.budget[k] = {income:[], expense:[], savings:[]};
+                            const y = parseInt(ym[1]), m = mi;
+                            if(!newData.budget[y]) newData.budget[y] = {};
+                            if(!newData.budget[y][m]) newData.budget[y][m] = {income:[], expense:[], savings:[]};
                             const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], {header:1, defval:''});
                             let sec = '';
                             rows.forEach(row => {
@@ -270,9 +288,9 @@
                                 if(r0.includes('المصاريف') && r0.includes('──')) { sec = 'expense'; return; }
                                 if(r0.includes('المدخرات') && r0.includes('──')) { sec = 'savings'; return; }
                                 if(!r0 || r0.includes('إجمالي') || r0==='البند' || r0==='المتبقي' || r0==='المدخول' || r0==='المصاريف') return;
-                                if(sec === 'income') { const a = parseFloat(r1)||0; if(a>0) newData.budget[k].income.push({id:Date.now()+Math.random(), name:r0, amt:a}); }
-                                else if(sec === 'expense') { const a = parseFloat(r2)||0; if(a>0) newData.budget[k].expense.push({id:Date.now()+Math.random(), name:r0, cat:r1||'أخرى', amt:a}); }
-                                else if(sec === 'savings') { const a = parseFloat(r1)||0; if(a>0) newData.budget[k].savings.push({id:Date.now()+Math.random(), name:r0, amt:a}); }
+                                if(sec === 'income') { const a = parseFloat(r1)||0; if(a>0) newData.budget[y][m].income.push({id:Date.now()+Math.random(), name:r0, amt:a}); }
+                                else if(sec === 'expense') { const a = parseFloat(r2)||0; if(a>0) newData.budget[y][m].expense.push({id:Date.now()+Math.random(), name:r0, cat:r1||'أخرى', amt:a}); }
+                                else if(sec === 'savings') { const a = parseFloat(r1)||0; if(a>0) newData.budget[y][m].savings.push({id:Date.now()+Math.random(), name:r0, amt:a}); }
                             });
                             imported++;
                         }
@@ -337,8 +355,8 @@
                              <button onClick={() => exportWA('الشهر الحالي')} className="bg-green-600/20 text-green-400 px-6 py-2 rounded-xl text-[10px] font-bold border border-green-500/20 w-full md:w-auto">واتساب الشهر</button>
                         </div>
                         <div className="grid md:grid-cols-2 gap-8">
-                            <Box title="مصادر الدخل" type="income" items={mData.income} total={summary.inc} color="text-green-400" onAdd={(n,a)=>addRecord('income',n,a)} onDel={id=>delRecord('income',id)} history={getHistory('income')} onEdit={(item)=>setEditModal({target:'budget', monthKey, type:'income', item})} />
-                            <Box title="المصاريف" type="expense" items={mData.expense} total={summary.exp} color="text-red-400" onAdd={(n,a,c)=>addRecord('expense',n,a,c)} onDel={id=>delRecord('expense',id)} hasCat history={getHistory('expense')} onEdit={(item)=>setEditModal({target:'budget', monthKey, type:'expense', item})} />
+                            <Box title="مصادر الدخل" type="income" items={safeIncome} total={summary.inc} color="text-green-400" onAdd={(n,a)=>addRecord('income',n,a)} onDel={id=>delRecord('income',id)} history={getHistory('income')} onEdit={(item)=>setEditModal({target:'budget', y:curDate.y, m:curDate.m, type:'income', item})} />
+                            <Box title="المصاريف" type="expense" items={safeExpense} total={summary.exp} color="text-red-400" onAdd={(n,a,c)=>addRecord('expense',n,a,c)} onDel={id=>delRecord('expense',id)} hasCat history={getHistory('expense')} onEdit={(item)=>setEditModal({target:'budget', y:curDate.y, m:curDate.m, type:'expense', item})} />
                         </div>
                     </div>
                 )}
@@ -349,7 +367,7 @@
                         <div className="flex justify-end bg-white/5 border border-white/10 p-3 rounded-2xl">
                              <button onClick={() => exportWA('المدخرات')} className="bg-green-600/20 text-green-400 px-6 py-2 rounded-xl border border-green-500/20 text-[10px] font-bold w-full md:w-auto">واتساب المدخرات</button>
                         </div>
-                        <Box title="المدخرات اليدوية (الشهر الحالي)" type="savings" items={mData.savings} total={summary.sav} color="text-amber-400" onAdd={(n,a)=>addRecord('savings',n,a)} onDel={id=>delRecord('savings',id)} history={getHistory('savings')} onEdit={(item)=>setEditModal({target:'budget', monthKey, type:'savings', item})} />
+                        <Box title="المدخرات اليدوية (الشهر الحالي)" type="savings" items={safeSavings} total={summary.sav} color="text-amber-400" onAdd={(n,a)=>addRecord('savings',n,a)} onDel={id=>delRecord('savings',id)} history={getHistory('savings')} onEdit={(item)=>setEditModal({target:'budget', y:curDate.y, m:curDate.m, type:'savings', item})} />
                     </div>
                 )}
 
@@ -359,10 +377,10 @@
 
                 {tab === 'overview' && (
                     <div className="space-y-6 animate-fade-in">
-                        <div className="flex gap-2 bg-white/5 border border-white/10 p-3 rounded-2xl">
-                             <button onClick={() => exportWA('الإجمالي')} className="flex-1 bg-green-600/20 text-green-400 py-2 rounded-xl text-[10px] font-bold border border-green-500/20">واتساب الإجمالي</button>
-                             <button onClick={exportExcel} className="flex-1 bg-blue-600/20 text-blue-400 py-2 rounded-xl text-[10px] font-bold border border-blue-500/20">⬇ تصدير Excel</button>
-                             <label className="flex-1 bg-purple-600/20 text-purple-400 py-2 rounded-xl text-[10px] font-bold border border-purple-500/20 text-center cursor-pointer">
+                        <div className="flex gap-2 bg-white/5 border border-white/10 p-3 rounded-2xl flex-wrap">
+                             <button onClick={() => exportWA('الإجمالي')} className="flex-1 min-w-[120px] bg-green-600/20 text-green-400 py-3 rounded-xl text-[10px] font-bold border border-green-500/20">واتساب الإجمالي</button>
+                             <button onClick={exportExcel} className="flex-1 min-w-[120px] bg-blue-600/20 text-blue-400 py-3 rounded-xl text-[10px] font-bold border border-blue-500/20">⬇ تصدير Excel</button>
+                             <label className="flex-1 min-w-[120px] bg-purple-600/20 text-purple-400 py-3 rounded-xl text-[10px] font-bold border border-purple-500/20 text-center cursor-pointer">
                                  ⬆ استيراد Excel
                                  <input type="file" className="hidden" accept=".xlsx" onChange={importExcel} />
                              </label>
@@ -392,7 +410,7 @@
                     <NavBtn act={tab==='overview'} click={()=>setTab('overview')} label="الإجمالي" icon="📊" />
                 </footer>
 
-                {/* Edit Modal */}
+                {/* نافذة التعديل */}
                 {editModal && (
                     <EditModal 
                         modalData={editModal} 
@@ -404,7 +422,7 @@
         );
     }
 
-    // --- Components ---
+    // --- مكونات واجهة المستخدم (Components) ---
 
     function Stat({ label, val, color, sub, large }) {
         return (
@@ -424,7 +442,7 @@
         const [c, setC] = useState(CATS[1]);
         const [q, setQ] = useState('');
 
-        const filtered = items.filter(i => (i.name||'').includes(q) || (i.cat||'').includes(q));
+        const filtered = (items||[]).filter(i => (i.name||'').includes(q) || (i.cat||'').includes(q));
 
         return (
             <div className="bg-white/[0.03] border border-white/10 rounded-[2.5rem] overflow-hidden flex flex-col shadow-lg backdrop-blur-md pb-4">
@@ -466,7 +484,7 @@
                             {CATS.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                     )}
-                    <button onClick={()=>{if(n&&a){onAdd(n,a,hasCat?c:undefined);setN('');setA('')}}} className="bg-white/10 hover:bg-white text-white hover:text-black border border-white/20 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-[0.1em] transition-all mt-1">إضافة السجل</button>
+                    <button onClick={()=>{if(n&&a){onAdd(n,a,hasCat?c:undefined);setN('');setA('')}}} className="bg-white text-black py-2 rounded-xl text-[10px] font-bold uppercase tracking-[0.1em] shadow-lg active:scale-95 transition-transform mt-1">إضافة السجل</button>
                 </div>
             </div>
         );
@@ -479,11 +497,12 @@
         const [r, setR] = useState('');
         const [q, setQ] = useState('');
         
-        const debts = appData.debt[tab].filter(d => (d.person||'').includes(q) || (d.reason||'').includes(q));
+        const debtsList = appData.debt[tab] || [];
+        const filteredDebts = debtsList.filter(d => (d.person||'').includes(q) || (d.reason||'').includes(q));
 
         const addDebt = () => {
             if(!n || !a || !r) return;
-            const newData = {...appData};
+            const newData = JSON.parse(JSON.stringify(appData));
             newData.debt[tab].push({ id: Date.now(), person: n, amt: parseFloat(a), reason: r, date: new Date().toISOString().substring(0,10), payments: [] });
             saveToCloud(newData);
             setN(''); setA(''); setR('');
@@ -491,21 +510,21 @@
 
         const delDebt = (id) => {
             if(!window.confirm('حذف هذا الدين نهائياً؟')) return;
-            const newData = {...appData};
+            const newData = JSON.parse(JSON.stringify(appData));
             newData.debt[tab] = newData.debt[tab].filter(d => d.id !== id);
             saveToCloud(newData);
         };
 
         const addPay = (id, pA, pN) => {
             if(!pA) return;
-            const newData = {...appData};
+            const newData = JSON.parse(JSON.stringify(appData));
             const d = newData.debt[tab].find(i=>i.id===id);
             if(d) d.payments.push({ id: Date.now(), amt: parseFloat(pA), note: pN||'دفعة', date: new Date().toISOString().substring(0,10) });
             saveToCloud(newData);
         };
 
         const delPay = (dId, pId) => {
-            const newData = {...appData};
+            const newData = JSON.parse(JSON.stringify(appData));
             const d = newData.debt[tab].find(i=>i.id===dId);
             if(d) d.payments = d.payments.filter(p => p.id !== pId);
             saveToCloud(newData);
@@ -514,8 +533,8 @@
         return (
             <div className="space-y-6 animate-fade-in">
                 <div className="grid grid-cols-2 gap-4">
-                    <Stat label="مطلوب مني" val={appData.debt.owe.reduce((s,d)=>s+(d.amt-d.payments.reduce((ss,p)=>ss+p.amt,0)),0)} color="text-red-400" />
-                    <Stat label="مدين لي" val={appData.debt.owed.reduce((s,d)=>s+(d.amt-d.payments.reduce((ss,p)=>ss+p.amt,0)),0)} color="text-green-400" />
+                    <Stat label="مطلوب مني" val={(appData.debt.owe||[]).reduce((s,d)=>s+(d.amt-(d.payments||[]).reduce((ss,p)=>ss+p.amt,0)),0)} color="text-red-400" />
+                    <Stat label="مدين لي" val={(appData.debt.owed||[]).reduce((s,d)=>s+(d.amt-(d.payments||[]).reduce((ss,p)=>ss+p.amt,0)),0)} color="text-green-400" />
                 </div>
                 <div className="flex justify-end bg-white/5 border border-white/10 p-3 rounded-2xl">
                      <button onClick={() => exportWA('الديون')} className="bg-green-600/20 text-green-400 px-6 py-2 rounded-xl text-[10px] font-bold border border-green-500/20 w-full md:w-auto">واتساب الديون</button>
@@ -534,7 +553,7 @@
                         </div>
                         <div className="flex gap-2">
                             <input className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs outline-none focus:border-white/30" placeholder="السبب / الملاحظة" value={r} onChange={e=>setR(e.target.value)} />
-                            <button onClick={addDebt} className="bg-white/10 hover:bg-white text-white hover:text-black border border-white/20 px-6 py-2 rounded-xl text-[10px] font-bold transition-colors">إضافة</button>
+                            <button onClick={addDebt} className="bg-white text-black px-6 py-2 rounded-xl text-[10px] font-bold active:scale-95 transition-transform">إضافة</button>
                         </div>
                     </div>
                 </div>
@@ -542,9 +561,9 @@
                 <div className="space-y-4">
                     <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-white/30 transition-colors" placeholder="🔍 بحث في الأسماء والديون..." value={q} onChange={e=>setQ(e.target.value)} />
                     
-                    {debts.length === 0 && <div className="text-center py-10 opacity-30 text-xs">لا توجد ديون مسجلة</div>}
-                    {debts.map(d => {
-                        const pd = d.payments.reduce((s,p)=>s+p.amt,0);
+                    {filteredDebts.length === 0 && <div className="text-center py-10 opacity-30 text-xs">لا توجد ديون مسجلة</div>}
+                    {filteredDebts.map(d => {
+                        const pd = (d.payments||[]).reduce((s,p)=>s+p.amt,0);
                         const rem = d.amt - pd;
                         const isDone = rem <= 0;
                         return (
@@ -568,7 +587,7 @@
                                     <div className={`h-full ${isDone?'bg-green-500':'bg-blue-500'}`} style={{width: `${Math.min(100, (pd/d.amt)*100)}%`}}></div>
                                 </div>
                                 
-                                {d.payments.length > 0 && (
+                                {(d.payments||[]).length > 0 && (
                                     <div className="mb-3 space-y-1">
                                         {d.payments.map(p => (
                                             <div key={p.id} className="flex justify-between text-[10px] bg-white/5 px-3 py-1.5 rounded-lg opacity-80">
