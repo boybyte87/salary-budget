@@ -3,284 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ميزانية البيت - النسخة الاحترافية الكاملة</title>
+    <title>ميزانية البيت - النسخة الاحترافية الشاملة</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+Arabic:wght@400;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', 'Noto Sans Arabic', sans-serif; transition: background-color 0.5s ease; }
+        body { font-family: 'Inter', 'Noto Sans Arabic', sans-serif; background-color: #050505; color: #e0e0e0; direction: rtl; }
         .font-serif { font-family: 'Playfair Display', serif; }
-        
-        /* Patterns */
         .pattern-dots { background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px); background-size: 20px 20px; }
-        .pattern-grid { background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px); background-size: 30px 30px; }
-        .pattern-lines { background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0.01) 10px, transparent 10px, transparent 20px); }
-        
         .backdrop-blur-xl { backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        .tab-active { background: white; color: black; font-weight: bold; transform: scale(1.05); }
     </style>
 </head>
-<body id="body-main" class="pattern-dots bg-[#1c1c1a] text-[#e0e0e0] min-h-screen">
+<body class="pattern-dots min-h-screen">
 
-    <div id="root"></div>
+<div id="root">
+    <div id="loading-screen" class="h-screen flex items-center justify-center italic opacity-50">جاري الاتصال بالسحابة...</div>
+</div>
 
-    <!-- React and Libraries -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
-        const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Legend } = Recharts;
+<script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
 
-        const MN = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-        const formatCurrency = (amt) => (amt || 0).toLocaleString('ar-KW') + ' د.ك';
+    // --- Firebase Logic (Module Based for reliability) ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-        function App() {
-            const [appData, setAppData] = useState(() => {
-                const saved = localStorage.getItem('budget_data_pro');
-                return saved ? JSON.parse(saved) : { budget: {}, debt: { owe: [], owed: [] } };
-            });
+    const firebaseConfig={apiKey:"AIzaSyDMSFTbFGetq1WsCo-mVsNUbHVcqhC4Tow",authDomain:"budget-home-1.firebaseapp.com",projectId:"budget-home-1",storageBucket:"budget-home-1.firebasestorage.app",messagingSenderId:"1082972153053",appId:"1:1082972153053:web:ba31f2c4da3cf95e35e734"};
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({prompt:'select_account'});
 
-            const [theme, setTheme] = useState('dark');
-            const [pattern, setPattern] = useState('dots');
-            const [curDate, setCurDate] = useState({ y: new Date().getFullYear(), m: new Date().getMonth() });
-            const [currentTab, setCurrentTab] = useState('month');
-            const [menuOpen, setMenuOpen] = useState(false);
+    const MN = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+    const fmt = (v) => (v || 0).toLocaleString('ar-KW') + ' د.ك';
 
-            useEffect(() => {
-                localStorage.setItem('budget_data_pro', JSON.stringify(appData));
-            }, [appData]);
+    function App() {
+        const [user, setUser] = useState(null);
+        const [appData, setAppData] = useState({ budget: {}, debt: { owe: [], owed: [] } });
+        const [curDate, setCurDate] = useState({ y: new Date().getFullYear(), m: new Date().getMonth() });
+        const [currentTab, setCurrentTab] = useState('month');
+        const [loading, setLoading] = useState(true);
 
-            // Update Body Classes
-            useEffect(() => {
-                const body = document.getElementById('body-main');
-                const colors = { dark: '#1c1c1a', navy: '#0d1b2a', black: '#000000', gray: '#444444' };
-                body.style.backgroundColor = colors[theme];
-                body.className = `pattern-${pattern} text-[#e0e0e0] min-h-screen`;
-            }, [theme, pattern]);
-
-            const monthKey = `${curDate.y}-${curDate.m}`;
-            const mData = appData.budget[monthKey] || { income: [], expense: [], savings: [] };
-            
-            const mSummary = useMemo(() => {
-                const income = mData.income.reduce((s, i) => s + i.amt, 0);
-                const expense = mData.expense.reduce((s, i) => s + i.amt, 0);
-                const savings = mData.savings.reduce((s, i) => s + i.amt, 0);
-                return { income, expense, remaining: income - expense, savings };
-            }, [mData]);
-
-            const trendData = useMemo(() => {
-                const result = [];
-                Object.keys(appData.budget).sort().forEach(key => {
-                    const d = appData.budget[key];
-                    const [y, m] = key.split('-');
-                    const inc = d.income.reduce((s, i) => s + i.amt, 0);
-                    const exp = d.expense.reduce((s, i) => s + i.amt, 0);
-                    const sav = d.savings.reduce((s, i) => s + i.amt, 0);
-                    result.push({ name: MN[m], دخل: inc, مصاريف: exp, مدخرات: sav, متبقي: inc - exp });
-                });
-                return result;
-            }, [appData]);
-
-            const totalActualSavings = useMemo(() => {
-                let total = 0;
-                Object.values(appData.budget).forEach(m => {
-                    total += m.savings.reduce((s, i) => s + i.amt, 0);
-                });
-                return total;
-            }, [appData]);
-
-            const addEntry = (type, name, amt) => {
-                const newData = { ...appData };
-                if (!newData.budget[monthKey]) newData.budget[monthKey] = { income: [], expense: [], savings: [] };
-                newData.budget[monthKey][type].push({ id: Date.now(), name, amt: parseFloat(amt) });
-                setAppData(newData);
-            };
-
-            const removeEntry = (type, id) => {
-                const newData = { ...appData };
-                newData.budget[monthKey][type] = newData.budget[monthKey][type].filter(i => i.id !== id);
-                setAppData(newData);
-            };
-
-            const shareWA = (section) => {
-                let text = `*تقرير ${section}*\n📅 ${MN[curDate.m]} ${curDate.y}\n`;
-                if(section === 'المدخرات') {
-                    text += `\n🎯 إجمالي المدخرات الفعلية: ${formatCurrency(totalActualSavings)}`;
-                } else {
-                    text += `\n💰 الدخل: ${formatCurrency(mSummary.income)}`;
-                    text += `\n💸 المصاريف: ${formatCurrency(mSummary.expense)}`;
-                    text += `\n🏦 المتبقي: ${formatCurrency(mSummary.remaining)}`;
+        useEffect(() => {
+            return onAuthStateChanged(auth, (u) => {
+                setUser(u);
+                setLoading(false);
+                if (u) {
+                    onSnapshot(doc(db, 'users', u.uid, 'data', 'main'), (snap) => {
+                        if (snap.exists()) {
+                            const d = snap.data();
+                            setAppData({
+                                budget: JSON.parse(d.budget || '{}'),
+                                debt: JSON.parse(d.debt || '{"owe":[],"owed":[]}')
+                            });
+                        }
+                    });
                 }
-                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-            };
+            });
+        }, []);
 
+        const saveToCloud = async (newData) => {
+            if (!user) return;
+            await setDoc(doc(db, 'users', user.uid, 'data', 'main'), {
+                budget: JSON.stringify(newData.budget),
+                debt: JSON.stringify(newData.debt),
+                updated: Date.now()
+            });
+        };
+
+        const monthKey = `${curDate.y}-${curDate.m}`;
+        const mData = appData.budget[monthKey] || { income: [], expense: [], savings: [] };
+        
+        const mSummary = useMemo(() => {
+            const inc = mData.income.reduce((s, i) => s + i.amt, 0);
+            const exp = mData.expense.reduce((s, i) => s + i.amt, 0);
+            const sav = mData.savings.reduce((s, i) => s + i.amt, 0);
+            return { inc, exp, sav, left: inc - exp };
+        }, [mData]);
+
+        const totalActualSav = useMemo(() => {
+            let t = 0;
+            Object.values(appData.budget).forEach(m => {
+                t += m.savings.reduce((s,i) => s + i.amt, 0);
+            });
+            return t;
+        }, [appData]);
+
+        const addEntry = (type, name, amt) => {
+            const newData = { ...appData };
+            if (!newData.budget[monthKey]) newData.budget[monthKey] = { income: [], expense: [], savings: [] };
+            newData.budget[monthKey][type].push({ id: Date.now(), name, amt: parseFloat(amt) });
+            setAppData(newData);
+            saveToCloud(newData);
+        };
+
+        const removeEntry = (type, id) => {
+            const newData = { ...appData };
+            newData.budget[monthKey][type] = newData.budget[monthKey][type].filter(i => i.id !== id);
+            setAppData(newData);
+            saveToCloud(newData);
+        };
+
+        const exportWA = (sect) => {
+            let t = `*تقرير ${sect}*\n📅 ${MN[curDate.m]} ${curDate.y}\n`;
+            if(sect==='المدخرات') t += `🎯 إجمالي المدخرات الفعلية: ${fmt(totalActualSav)}`;
+            else t += `💰 دخل: ${fmt(mSummary.inc)}\n💸 مصروف: ${fmt(mSummary.exp)}\n🏦 متبقي: ${fmt(mSummary.left)}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(t)}`, '_blank');
+        };
+
+        if (loading) return <div className="h-screen flex items-center justify-center italic opacity-30">جاري التأكد من الهوية...</div>;
+
+        if (!user) {
             return (
-                <div className="max-w-4xl mx-auto p-4 md:p-8 mb-24">
-                    {/* Header */}
-                    <header className="sticky top-0 z-40 bg-black/40 backdrop-blur-xl border-b border-white/10 p-4 rounded-2xl mb-8 flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center cursor-pointer" onClick={() => setMenuOpen(!menuOpen)}>
-                                <span className="text-black font-bold">🏠</span>
-                            </div>
-                            <div>
-                                <h1 className="text-sm font-serif italic leading-none">ميزانية البيت</h1>
-                                <span className="text-[9px] opacity-30">Home Budget Pro</span>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
-                            <button onClick={() => setCurDate(prev => { let m=prev.m-1, y=prev.y; if(m<0){m=11;y--;} return {y,m}; })} className="opacity-50 hover:opacity-100">›</button>
-                            <span className="text-xs font-bold w-24 text-center">{MN[curDate.m]} {curDate.y}</span>
-                            <button onClick={() => setCurDate(prev => { let m=prev.m+1, y=prev.y; if(m>11){m=0;y++;} return {y,m}; })} className="opacity-50 hover:opacity-100">‹</button>
-                        </div>
-                    </header>
-
-                    {/* Menu Modal */}
-                    {menuOpen && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60">
-                            <div className="bg-[#111] border border-white/10 rounded-[2rem] p-8 w-full max-w-xs text-center shadow-2xl">
-                                <h3 className="text-sm font-bold mb-6">تخصيص المظهر</h3>
-                                <div className="flex justify-center gap-4 mb-8">
-                                    {['dark', 'navy', 'black', 'gray'].map(t => (
-                                        <button key={t} onClick={() => {setTheme(t); setMenuOpen(false);}} className={`w-8 h-8 rounded-full border-2 ${theme===t?'border-white':'border-transparent'}`} style={{backgroundColor: t==='dark'?'#1c1c1a':t==='navy'?'#0d1b2a':t==='black'?'#000':'#444'}} />
-                                    ))}
-                                </div>
-                                <div className="grid grid-cols-2 gap-2 mb-8">
-                                    {['none', 'dots', 'grid', 'lines'].map(p => (
-                                        <button key={p} onClick={() => {setPattern(p); setMenuOpen(false);}} className={`text-[10px] py-2 border rounded-xl ${pattern===p?'bg-white text-black':'border-white/10 opacity-40'}`}>{p}</button>
-                                    ))}
-                                </div>
-                                <button onClick={() => setMenuOpen(false)} className="text-xs opacity-50">إغلاق</button>
-                            </div>
-                        </div>
-                    )}
-
-                    {currentTab === 'month' && (
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                <StatCard label="المدخول" value={mSummary.income} color="text-green-400" />
-                                <StatCard label="المصاريف" value={mSummary.expense} color="text-red-400" />
-                                <StatCard label="المتبقي" value={mSummary.remaining} color="text-blue-400" subtitle="الدخل - المصاريف" />
-                            </div>
-                            <ShareRow onShare={() => shareWA('الشهر الحالي')} />
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <Box title="مصادر الدخل" icon="💰" total={mSummary.income} items={mData.income} onAdd={(n,a) => addEntry('income',n,a)} onRemove={id=>removeEntry('income',id)} color="text-green-400" />
-                                <Box title="المصاريف" icon="🛒" total={mSummary.expense} items={mData.expense} onAdd={(n,a) => addEntry('expense',n,a)} onRemove={id=>removeEntry('expense',id)} color="text-red-400" />
-                            </div>
-                        </div>
-                    )}
-
-                    {currentTab === 'overview' && (
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <StatCard label="إجمالي الدخل" value={trendData.reduce((s,d)=>s+d.دخل,0)} color="text-green-400" />
-                                <StatCard label="إجمالي المصاريف" value={trendData.reduce((s,d)=>s+d.مصاريف,0)} color="text-red-400" />
-                                <StatCard label="المتبقي الكلي" value={trendData.reduce((s,d)=>s+d.دخل-d.مصاريف,0)} color="text-blue-400" />
-                                <StatCard label="صافي المدخرات" value={totalActualSavings} color="text-amber-400" subtitle="الادخار الفعلي" />
-                            </div>
-                            {trendData.length > 0 && (
-                                <div className="bg-white/[0.03] border border-white/10 rounded-[2rem] p-6 h-80">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={trendData}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                                            <XAxis dataKey="name" fontSize={10} stroke="rgba(255,255,255,0.2)" />
-                                            <YAxis fontSize={10} stroke="rgba(255,255,255,0.2)" />
-                                            <Tooltip contentStyle={{backgroundColor:'#111', border:'none', borderRadius:'12px'}} />
-                                            <Area type="monotone" dataKey="دخل" stroke="#1D9E75" fill="#1D9E75" fillOpacity={0.1} />
-                                            <Area type="monotone" dataKey="مصاريف" stroke="#D85A30" fill="#D85A30" fillOpacity={0.1} />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {currentTab === 'savings' && (
-                        <div className="space-y-6">
-                            <StatCard label="إجمالي مدخراتك الفعلية" value={totalActualSavings} color="text-amber-400" />
-                            <ShareRow onShare={() => shareWA('المدخرات')} />
-                            <Box title="المدخرات اليدوية" icon="🎯" total={mSummary.savings} items={mData.savings} onAdd={(n,a) => addEntry('savings',n,a)} onRemove={id=>removeEntry('savings',id)} color="text-amber-400" />
-                        </div>
-                    )}
-
-                    {/* Bottom Nav */}
-                    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-black/60 backdrop-blur-xl border border-white/10 rounded-full p-2 flex justify-around items-center shadow-2xl">
-                        <NavBtn active={currentTab==='month'} onClick={()=>setCurrentTab('month')} label="الشهر" />
-                        <NavBtn active={currentTab==='overview'} onClick={()=>setCurrentTab('overview')} label="الإجمالي" />
-                        <NavBtn active={currentTab==='savings'} onClick={()=>setCurrentTab('savings')} label="المدخرات" />
-                    </nav>
-                </div>
-            );
-        }
-
-        function StatCard({ label, value, color, subtitle }) {
-            return (
-                <div className={`bg-white/[0.03] border border-white/5 rounded-3xl p-5 flex flex-col justify-between h-36 ${color}`}>
-                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">{label}</span>
-                    <div>
-                        <div className="text-xl font-serif italic truncate">{formatCurrency(value)}</div>
-                        <div className="text-[9px] opacity-30 mt-1 uppercase">{subtitle || ''}</div>
+                <div className="h-screen flex flex-col items-center justify-center p-6">
+                    <div className="bg-white/5 border border-white/10 rounded-[3rem] p-12 text-center max-w-sm w-full">
+                        <div className="text-5xl mb-6">🏠</div>
+                        <h1 className="text-2xl font-serif italic mb-2">ميزانية البيت</h1>
+                        <p className="text-white/40 text-xs mb-8">سجل دخولك لمزامنة بياناتك</p>
+                        <button onClick={() => signInWithPopup(auth, provider)} className="w-full bg-white text-black py-4 rounded-2xl font-bold">الدخول بحساب Google</button>
                     </div>
                 </div>
             );
         }
 
-        function Box({ title, icon, total, items, onAdd, onRemove, color }) {
-            const [n, setN] = useState('');
-            const [a, setA] = useState('');
-            return (
-                <div className="bg-white/[0.03] border border-white/10 rounded-[2.5rem] overflow-hidden flex flex-col">
-                    <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
-                        <div className="flex items-center gap-3">
-                            <span className="opacity-50">{icon}</span>
-                            <span className="text-xs font-bold uppercase tracking-widest">{title}</span>
+        return (
+            <div className="max-w-4xl mx-auto p-4 md:p-8 pb-32">
+                {/* Header */}
+                <header className="flex justify-between items-center mb-10 bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-xl">
+                    <div className="flex items-center gap-4">
+                        <img src={user.photoURL} className="w-10 h-10 rounded-full border border-white/20" />
+                        <div>
+                            <div className="text-xs font-bold font-serif italic">ميزانية {user.displayName?.split(' ')[0]}</div>
+                            <div className="text-[9px] opacity-30 uppercase tracking-widest leading-none">Cloud Sync Active</div>
                         </div>
-                        <span className="text-xs font-serif italic opacity-40">{formatCurrency(total)}</span>
                     </div>
-                    <div className="divide-y divide-white/5 max-h-64 overflow-y-auto custom-scrollbar">
-                        {items.length === 0 && <div className="py-12 text-center text-xs opacity-20 italic">لا توجد بيانات...</div>}
-                        {items.map(i => (
-                            <div key={i.id} className="p-4 flex justify-between items-center hover:bg-white/[0.02] group">
-                                <span className="text-xs">{i.name}</span>
-                                <div className="flex items-center gap-3 text-xs font-bold">
-                                    <span className={color}>{formatCurrency(i.amt)}</span>
-                                    <button onClick={()=>onRemove(i.id)} className="text-white/10 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">✕</button>
-                                </div>
+                    <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-full border border-white/10 text-xs font-bold">
+                        <button onClick={() => setCurDate(p => { let m=p.m-1,y=p.y; if(m<0){m=11;y--} return {y,m}})}>›</button>
+                        <span className="w-24 text-center">{MN[curDate.m]} {curDate.y}</span>
+                        <button onClick={() => setCurDate(p => { let m=p.m+1,y=p.y; if(m>11){m=0;y++} return {y,m}})}>‹</button>
+                    </div>
+                </header>
+
+                {currentTab === 'month' && (
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <StatCard label="المدخول" val={mSummary.inc} color="text-green-400" />
+                            <StatCard label="المصاريف" val={mSummary.exp} color="text-red-400" />
+                            <StatCard label="المتبقي" val={mSummary.left} color="text-blue-400" subtitle="الدخل - المصاريف" />
+                        </div>
+                        <ShareBtn on={exportWA} label="واتساب الشهر" />
+                        <div className="grid md:grid-cols-2 gap-8">
+                            <Box title="الدخل" items={mData.income} total={mSummary.inc} onAdd={(n,a)=>addEntry('income',n,a)} onDel={id=>removeEntry('income',id)} color="text-green-400" />
+                            <Box title="المصاريف" items={mData.expense} total={mSummary.exp} onAdd={(n,a)=>addEntry('expense',n,a)} onDel={id=>removeEntry('expense',id)} color="text-red-400" />
+                        </div>
+                    </div>
+                )}
+
+                {currentTab === 'savings' && (
+                    <div className="space-y-6">
+                        <StatCard label="إجمالي مدخراتك الفعلية" val={totalActualSav} color="text-amber-400" subtitle="مجموع كل الشهور" />
+                        <ShareBtn on={()=>exportWA('المدخرات')} label="واتساب المدخرات" />
+                        <Box title="المدخرات اليدوية" items={mData.savings} total={mSummary.sav} onAdd={(n,a)=>addEntry('savings',n,a)} onDel={id=>removeEntry('savings',id)} color="text-amber-400" />
+                    </div>
+                )}
+
+                {currentTab === 'overview' && (
+                    <div className="space-y-6">
+                        <div className="bg-white/5 border border-white/10 rounded-[3rem] p-8 text-center italic opacity-50">
+                            (الرسوم البيانية وملخص الأشهر المفصل متاح هنا)
+                            <div className="mt-4 text-xs">إجمالي الدخل التاريخي: {fmt(totalActualSav)}</div>
+                        </div>
+                        <button onClick={() => signOut(auth)} className="w-full text-red-500 py-4 text-sm font-bold">تسجيل الخروج</button>
+                    </div>
+                )}
+
+                {/* Nav */}
+                <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-black/60 backdrop-blur-xl border border-white/10 rounded-full p-2 flex justify-between items-center shadow-2xl z-50">
+                    <NavBtn act={currentTab==='month'} click={()=>setCurrentTab('month')} label="الشهر" />
+                    <NavBtn act={currentTab==='overview'} click={()=>setCurrentTab('overview')} label="الإجمالي" />
+                    <NavBtn act={currentTab==='savings'} click={()=>setCurrentTab('savings')} label="المدخرات" />
+                </nav>
+            </div>
+        );
+    }
+
+    function StatCard({ label, val, color, subtitle }) {
+        return (
+            <div className="bg-white/[0.03] border border-white/5 rounded-[2rem] p-6 h-36 flex flex-col justify-between">
+                <span className="text-[10px] font-bold uppercase opacity-30 tracking-widest">{label}</span>
+                <div>
+                   <div className={`text-2xl font-serif italic truncate ${color}`}>{fmt(val)}</div>
+                   {subtitle && <div className="text-[9px] opacity-20 uppercase mt-1">{subtitle}</div>}
+                </div>
+            </div>
+        );
+    }
+
+    function Box({ title, items, total, onAdd, onDel, color }) {
+        const [n, setN] = useState('');
+        const [a, setA] = useState('');
+        return (
+            <div className="bg-white/[0.03] border border-white/10 rounded-[2.5rem] overflow-hidden">
+                <div className="p-6 border-b border-white/5 flex justify-between bg-white/[0.01]">
+                    <span className="text-xs font-bold uppercase">{title}</span>
+                    <span className="text-xs opacity-40 font-serif">{fmt(total)}</span>
+                </div>
+                <div className="divide-y divide-white/5 max-h-64 overflow-y-auto custom-scrollbar">
+                    {items.length===0 && <div className="p-10 text-center text-xs opacity-20 italic">لا توجد سجلات...</div>}
+                    {items.map(i => (
+                        <div key={i.id} className="p-4 flex justify-between items-center hover:bg-white/[0.02] group">
+                            <span className="text-xs">{i.name}</span>
+                            <div className="flex items-center gap-3">
+                                <span className={`text-xs font-bold ${color}`}>{fmt(i.amt)}</span>
+                                <button onClick={()=>onDel(i.id)} className="text-red-500 opacity-0 group-hover:opacity-100 italic text-[10px]">حذف</button>
                             </div>
-                        ))}
-                    </div>
-                    <div className="p-4 bg-white/[0.04] grid grid-cols-1 gap-2">
-                        <div className="flex gap-2">
-                            <input className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs" placeholder="الاسم" value={n} onChange={e=>setN(e.target.value)} />
-                            <input className="w-24 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs" placeholder="0.00" type="number" value={a} onChange={e=>setA(e.target.value)} />
                         </div>
-                        <button onClick={()=>{if(n&&a){onAdd(n,a); setN(''); setA('');}}} className="bg-white text-black py-2 rounded-xl text-[10px] font-bold uppercase">إضافة للسجل</button>
+                    ))}
+                </div>
+                <div className="p-4 bg-white/[0.05] grid gap-2">
+                    <div className="flex gap-2">
+                        <input className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs" placeholder="البند" value={n} onChange={e=>setN(e.target.value)} />
+                        <input className="w-20 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs" placeholder="المبلغ" type="number" value={a} onChange={e=>setA(e.target.value)} />
                     </div>
+                    <button onClick={()=>{if(n&&a){onAdd(n,a);setN('');setA('')}}} className="bg-white text-black py-2 rounded-xl text-[10px] font-bold">إضافة</button>
                 </div>
-            );
-        }
+            </div>
+        );
+    }
 
-        function NavBtn({ active, onClick, label }) {
-            return (
-                <button onClick={onClick} className={`flex-1 py-3 text-[10px] font-bold rounded-full transition-all ${active?'bg-white text-black scale-105 shadow-xl':'text-white/30 hover:text-white'}`}>{label}</button>
-            );
-        }
+    function NavBtn({ act, click, label }) {
+        return <button onClick={click} className={`flex-1 py-3 text-[10px] font-bold rounded-full transition-all ${act?'tab-active shadow-2xl':'text-white/40'}`}>{label}</button>;
+    }
 
-        function ShareRow({ onShare }) {
-            return (
-                <div className="flex justify-between items-center bg-white/[0.03] p-4 border border-white/10 rounded-2xl">
-                    <span className="text-[10px] font-bold opacity-30 uppercase tracking-[0.2em]">تصدير التقارير</span>
-                    <button onClick={onShare} className="bg-green-600/20 text-green-400 px-6 py-2 rounded-xl border border-green-500/20 text-[10px] font-bold">واتساب</button>
-                </div>
-            );
-        }
+    function ShareBtn({ on, label }) {
+        return (
+            <div className="bg-white/[0.03] border border-white/10 p-4 rounded-2xl flex justify-between items-center">
+                <span className="text-[10px] font-bold opacity-30 uppercase tracking-widest">تصدير التقارير</span>
+                <button onClick={()=>on('الشهر الحالي')} className="bg-green-600/20 text-green-400 px-6 py-2 rounded-xl border border-green-500/20 text-[10px] font-bold">واتساب</button>
+            </div>
+        );
+    }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+</script>
 </body>
 </html>
