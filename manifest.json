@@ -3,7 +3,7 @@
   "short_name": "الميزانية",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f2f1ec",
+  "background_color": "#111110",
   "theme_color": "#185FA5",
   "icons": [
     {
