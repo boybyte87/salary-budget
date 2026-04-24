@@ -1,0 +1,15 @@
+{
+  "name": "ميزانية البيت",
+  "short_name": "الميزانية",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f2f1ec",
+  "theme_color": "#185FA5",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
