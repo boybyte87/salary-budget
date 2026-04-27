@@ -450,7 +450,7 @@ body{
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
 const firebaseConfig={apiKey:"AIzaSyDMSFTbFGetq1WsCo-mVsNUbHVcqhC4Tow",authDomain:"budget-home-1.firebaseapp.com",projectId:"budget-home-1",storageBucket:"budget-home-1.firebasestorage.app",messagingSenderId:"1082972153053",appId:"1:1082972153053:web:ba31f2c4da3cf95e35e734"};
 const app=initializeApp(firebaseConfig);
@@ -574,10 +574,14 @@ window.exportWhatsApp = function(page) {
   window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
 };
 
-// تسجيل الدخول والخروج
-window.signInWithGoogle = async function() { 
-  try { await signInWithPopup(auth, provider); } catch(e) { console.error("Login Error:", e); alert('تعذّر تسجيل الدخول. حاول مرة ثانية.'); } 
+/* ── تسجيل الدخول بنظام REDIRECT الجديد ── */
+window.signInWithGoogle = function() { 
+  signInWithRedirect(auth, provider).catch(function(e) {
+    console.error("Login Error:", e);
+    alert('تعذّر بدء تسجيل الدخول. حاول مرة ثانية.');
+  });
 };
+
 window.signOutUser = async function() { 
   if(unsubSnapshot) unsubSnapshot(); 
   await signOut(auth); 
@@ -619,7 +623,7 @@ function processData(d) {
   
   Object.values(localData.budget).forEach(y => {
     Object.values(y).forEach(m => {
-      if(!m.savings) m.savings = []; // التأكد من وجود مصفوفة المدخرات
+      if(!m.savings) m.savings = []; 
       ensureStringId(m.income || []);
       ensureStringId(m.expense || []);
       ensureStringId(m.savings || []);
@@ -628,7 +632,11 @@ function processData(d) {
   
   ['owe', 'owed'].forEach(side => {
       ensureStringId(localData.debt[side] || []);
-      (localData.debt[side] || []).forEach(debtItem => ensureStringId(debtItem.payments || []));
+      (localData.debt[side] || []).forEach(debtItem => {
+        // ترقيع ثغرة المديونيات القديمة
+        if(!debtItem.payments) { debtItem.payments = []; migrated = true; }
+        ensureStringId(debtItem.payments);
+      });
   });
 
   if(migrated) {
@@ -636,6 +644,11 @@ function processData(d) {
       saveToCloud();
   }
 }
+
+onAuthStateChanged(auth,function(user){
+  if(user){ currentUser=user; document.getElementById('login-screen').style.display='none'; document.getElementById('app-screen').style.display='block'; document.getElementById('user-avatar').src=user.photoURL||''; document.getElementById('user-name').textContent=user.displayName||''; document.getElementById('user-email').textContent=user.email||''; updateLabel(); initData(); }
+  else{ currentUser=null; document.getElementById('login-screen').style.display='flex'; document.getElementById('app-screen').style.display='none'; }
+});
 
 async function initData() { 
   if(!currentUser)return; 
@@ -650,6 +663,9 @@ async function initData() {
       if(!snap.exists())return; 
       processData(snap.data()); 
       setSyncDot('ok'); renderMonth(); 
+      // تحديث بقية الشاشات إذا كانت مفتوحة
+      if(document.getElementById('page-overview').classList.contains('active')) renderOverview();
+      if(document.getElementById('page-debt').classList.contains('active')) renderDebt();
     }); 
   } catch(e) { setSyncDot('err'); renderMonth(); } 
 }
@@ -945,13 +961,15 @@ var sr=[['ملخص جميع الأشهر'],[],['الشهر','المدخول','ا
 sr.push([],['الإجمالي',gI,gE,gI-gE]); var ws2=XLSX.utils.aoa_to_sheet(sr); ws2['!cols']=[{wch:20},{wch:18},{wch:18},{wch:18}]; XLSX.utils.book_append_sheet(wb,ws2,'الإجمالي'); var dr=[['المديونيات'],[],['النوع','الشخص','السبب','التاريخ','المبلغ','المدفوع','المتبقي','الحالة']]; ['owe','owed'].forEach(function(side){ dbData[side].forEach(function(d){ var paid=d.payments.reduce(function(s,p){ return s+p.amt; },0); var rem=Math.max(0,d.amt-paid); dr.push([side==='owe'?'مطلوب مني':'طالب',d.person,d.reason,d.date,d.amt,paid,rem,rem<=0?'مسدّد':paid>0?'جزئي':'معلق']); }); });
 var ws3=XLSX.utils.aoa_to_sheet(dr); ws3['!cols']=[{wch:14},{wch:16},{wch:24},{wch:12},{wch:14},{wch:14},{wch:14},{wch:10}]; XLSX.utils.book_append_sheet(wb,ws3,'المديونيات'); XLSX.writeFile(wb,'ميزانية_البيت.xlsx'); };
 
-/* ── IMPORT EXCEL (Fixed for Duplicates) ── */
+/* ── IMPORT EXCEL (تحديث جميع الأقسام بعد الاستيراد) ── */
 window.importExcel=function(event){ var file=event.target.files[0]; if(!file)return; var reader=new FileReader();
 reader.onload=function(e){ try{ var wb=XLSX.read(e.target.result,{type:'array'}); var imported=0; wb.SheetNames.forEach(function(sn){ var mi=MN.findIndex(function(m){ return sn.startsWith(m); }); if(mi===-1)return; var ym=sn.match(/(\d{4})/); if(!ym)return; var y=parseInt(ym[1]),m=mi; var d=getMonthData(y,m); 
-// تنظيف بيانات الشهر قبل الاستيراد عشان ما تتكرر البيانات
 d.income = []; d.expense = []; d.savings = [];
 var rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:''}); var sec=''; rows.forEach(function(row){ var r0=String(row[0]||'').trim(),r1=String(row[1]||'').trim(),r2=String(row[2]||'').trim(); if(r0.includes('المدخول')&&r0.includes('──')){sec='income';return;} if(r0.includes('المصاريف')&&r0.includes('──')){sec='expense';return;} if(r0.includes('المدخرات')&&r0.includes('──')){sec='savings';return;} if(!r0||r0.includes('إجمالي')||r0==='البند'||r0==='المتبقي'||r0==='المدخول'||r0==='المصاريف')return; if(sec==='income'){ var a=parseFloat(r1)||0; if(a>0)d.income.push({id:generateId(),name:r0,amt:a}); } else if(sec==='expense'){ var a2=parseFloat(r2)||0; if(a2>0)d.expense.push({id:generateId(),name:r0,cat:r1||'أخرى',amt:a2}); } else if(sec==='savings'){ d.savings.push({id:generateId(),name:r0,amt:parseFloat(r1)||0});
-} }); imported++; }); event.target.value=''; saveToCloud(); renderMonth(); alert(imported>0?'✓ تم استيراد '+imported+' شهر بنجاح!':'ما لقيت بيانات.'); }catch(err){ alert('حصل خطأ أثناء الاستيراد.');
+} }); imported++; }); event.target.value=''; saveToCloud(); 
+// تحديث كل الشاشات
+renderMonth(); renderOverview(); renderDebt();
+alert(imported>0?'✓ تم استيراد '+imported+' شهر بنجاح!':'ما لقيت بيانات.'); }catch(err){ alert('حصل خطأ أثناء الاستيراد.');
 } }; reader.readAsArrayBuffer(file); };
 
 /* ── AUTOCOMPLETE CACHE ── */
