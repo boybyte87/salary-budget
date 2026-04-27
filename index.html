@@ -193,6 +193,22 @@ body{
 .autocomplete-item:hover,.autocomplete-item:active{background:var(--surface2);}
 .autocomplete-item b{color:var(--accent);font-weight:600;}
 @media(max-width:480px){.card-val{font-size:14px;}.page{padding:11px;}.main-tab{padding:9px 10px;font-size:12px;}}
+
+/* زر الواتساب أسفل الصفحة */
+.wa-bottom-btn {
+  width:100%;
+  margin-top:20px;
+  padding:14px;
+  background:#25D366;
+  color:white;
+  border:none;
+  font-weight:bold;
+  border-radius:var(--r-lg);
+  font-size:14px;
+  box-shadow:0 4px 12px rgba(37,211,102,0.3);
+  transition: transform 0.2s;
+}
+.wa-bottom-btn:active { transform: scale(0.98); }
 </style>
 </head>
 <body>
@@ -297,7 +313,6 @@ body{
 
   <div class="page active" id="page-month">
     <div style="height:14px"></div>
-    <button class="add-btn wa-btn" onclick="exportWhatsApp('month')" style="width:100%;margin-bottom:15px;padding:12px;background:#25D366;color:white;border:none;font-weight:bold;">📲 تصدير تقرير الشهر للواتساب</button>
     <div class="cards3">
       <div class="card"><div class="card-label">المدخول</div><div class="card-val cv-g" id="m-inc">0 د.ك</div></div>
       <div class="card"><div class="card-label">المصاريف</div><div class="card-val cv-r" id="m-exp">0 د.ك</div></div>
@@ -354,11 +369,11 @@ body{
       <div class="box-head"><span class="box-title">المدخول مقابل المصاريف</span></div>
       <div class="chart-wrap"><div class="canvas-box"><canvas id="m-chart" role="img" aria-label="مقارنة المدخول والمصاريف"></canvas></div></div>
     </div>
+    <button class="add-btn wa-bottom-btn" onclick="exportWhatsApp('month')">📲 تصدير تقرير الشهر للواتساب</button>
   </div>
 
   <div class="page" id="page-savings">
     <div style="height:14px"></div>
-    <button class="add-btn wa-btn" onclick="exportWhatsApp('savings')" style="width:100%;margin-bottom:15px;padding:12px;background:#25D366;color:white;border:none;font-weight:bold;">📲 تصدير المدخرات للواتساب</button>
     <div class="cards3" style="grid-template-columns: 1fr;">
       <div class="card" style="text-align:center;"><div class="card-label">إجمالي المدخرات (الصافي)</div><div class="card-val cv-g" id="s-tot-val">0 د.ك</div></div>
     </div>
@@ -389,11 +404,11 @@ body{
         </div>
       </div>
     </div>
+    <button class="add-btn wa-bottom-btn" onclick="exportWhatsApp('savings')">📲 تصدير المدخرات للواتساب</button>
   </div>
 
   <div class="page" id="page-overview">
     <div style="height:14px"></div>
-    <button class="add-btn wa-btn" onclick="exportWhatsApp('overview')" style="width:100%;margin-bottom:15px;padding:12px;background:#25D366;color:white;border:none;font-weight:bold;">📲 تصدير الإجمالي للواتساب</button>
     <div class="cards2">
       <div class="card"><div class="card-label">إجمالي الدخل</div><div class="card-val cv-g" id="o-inc">0 د.ك</div></div>
       <div class="card"><div class="card-label">إجمالي المصاريف</div><div class="card-val cv-r" id="o-exp">0 د.ك</div></div>
@@ -426,11 +441,11 @@ body{
       <div class="box-head"><span class="box-title">ملخص الأشهر</span></div>
       <div id="o-months"><div class="empty">لا توجد بيانات بعد</div></div>
     </div>
+    <button class="add-btn wa-bottom-btn" onclick="exportWhatsApp('overview')">📲 تصدير الإجمالي للواتساب</button>
   </div>
 
   <div class="page" id="page-debt">
     <div style="height:14px"></div>
-    <button class="add-btn wa-btn" onclick="exportWhatsApp('debt')" style="width:100%;margin-bottom:15px;padding:12px;background:#25D366;color:white;border:none;font-weight:bold;">📲 تصدير المديونية للواتساب</button>
     <div class="cards2">
       <div class="card"><div class="card-label">مطلوب مني (أنا مدين)</div><div class="card-val cv-r" id="d-owe">0 د.ك</div></div>
       <div class="card"><div class="card-label">طالب (الناس مدينة لي)</div><div class="card-val cv-g" id="d-owed">0 د.ك</div></div>
@@ -451,8 +466,15 @@ body{
       <div class="box">
         <div class="box-head"><span class="box-title">+ إضافة دَين (أنا المدين)</span></div>
         <div class="add-row" style="flex-direction:column;gap:8px;">
-          <div style="display:flex;gap:6px;flex-wrap:wrap;"><input type="text" id="owe-person" placeholder="اسم الشخص" style="max-width:160px" class="ac-input" data-ac="debt-person" autocomplete="off"/><input type="number" id="owe-amt" placeholder="المبلغ (د.ك)" style="max-width:120px" min="0"/><input type="date" id="owe-date" style="max-width:145px"/></div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;"><input type="text" id="owe-reason" placeholder="السبب / التفاصيل" style="flex:1" class="ac-input" data-ac="debt-reason" autocomplete="off"/><button class="add-btn" onclick="addDebt('owe')">+ إضافة</button></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <input type="text" id="owe-person" placeholder="الاسم" style="flex:1;min-width:120px;" class="ac-input" data-ac="debt-person" autocomplete="off"/>
+            <input type="number" id="owe-amt" placeholder="المبلغ (د.ك)" style="max-width:100px" min="0"/>
+            <input type="date" id="owe-date" style="max-width:130px"/>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <input type="text" id="owe-reason" placeholder="السبب (اختياري)" style="flex:1" class="ac-input" data-ac="debt-reason" autocomplete="off"/>
+            <button class="add-btn" onclick="addDebt('owe')">+ إضافة</button>
+          </div>
         </div>
       </div>
     </div>
@@ -468,11 +490,19 @@ body{
       <div class="box">
         <div class="box-head"><span class="box-title">+ إضافة دَين (الثاني المدين)</span></div>
         <div class="add-row" style="flex-direction:column;gap:8px;">
-          <div style="display:flex;gap:6px;flex-wrap:wrap;"><input type="text" id="owed-person" placeholder="اسم الشخص" style="max-width:160px" class="ac-input" data-ac="debt-person" autocomplete="off"/><input type="number" id="owed-amt" placeholder="المبلغ (د.ك)" style="max-width:120px" min="0"/><input type="date" id="owed-date" style="max-width:145px"/></div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;"><input type="text" id="owed-reason" placeholder="السبب / التفاصيل" style="flex:1" class="ac-input" data-ac="debt-reason" autocomplete="off"/><button class="add-btn" onclick="addDebt('owed')">+ إضافة</button></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <input type="text" id="owed-person" placeholder="الاسم" style="flex:1;min-width:120px;" class="ac-input" data-ac="debt-person" autocomplete="off"/>
+            <input type="number" id="owed-amt" placeholder="المبلغ (د.ك)" style="max-width:100px" min="0"/>
+            <input type="date" id="owed-date" style="max-width:130px"/>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <input type="text" id="owed-reason" placeholder="السبب (اختياري)" style="flex:1" class="ac-input" data-ac="debt-reason" autocomplete="off"/>
+            <button class="add-btn" onclick="addDebt('owed')">+ إضافة</button>
+          </div>
         </div>
       </div>
     </div>
+    <button class="add-btn wa-bottom-btn" onclick="exportWhatsApp('debt')">📲 تصدير المديونية للواتساب</button>
   </div>
 </div>
 
@@ -587,7 +617,7 @@ function fmt(n) { return privacyMode ? '*****' : kwdFormatter.format(n||0); }
 function fmts(n) { return privacyMode ? '***' : numFormatter.format(n||0); }
 function todayStr(){ return new Date().toISOString().substring(0,10); }
 
-/* ── تصدير الواتساب ── */
+/* ── تصدير الواتساب (يظهر الأرقام الفعلية) ── */
 window.exportWhatsApp = function(page) {
   var realFmt = function(n) { return kwdFormatter.format(n||0); };
   var msg = "";
@@ -905,8 +935,21 @@ function renderSavings() {
   document.getElementById('s-tot-val').textContent = fmt(tNet);
 }
 
-/* ── DEBT ── */
-window.addDebt=function(side){ var person=document.getElementById(side+'-person').value.trim(); var amt=parseFloat(document.getElementById(side+'-amt').value); var reason=document.getElementById(side+'-reason').value.trim(); var date=document.getElementById(side+'-date').value||todayStr(); if(!person||isNaN(amt)||amt<=0||!reason)return; localData.debt[side].push({id:generateId(),person:person,amt:amt,reason:reason,date:date,payments:[]}); document.getElementById(side+'-person').value=''; document.getElementById(side+'-amt').value=''; document.getElementById(side+'-reason').value=''; document.getElementById(side+'-date').value=''; saveToCloud(); renderDebt(); };
+/* ── DEBT (مع حل مشكلة السبب ومربعات الإدخال) ── */
+window.addDebt=function(side){ 
+  var person=document.getElementById(side+'-person').value.trim(); 
+  var amt=parseFloat(document.getElementById(side+'-amt').value); 
+  var reason=document.getElementById(side+'-reason').value.trim() || 'بدون تفاصيل'; 
+  var date=document.getElementById(side+'-date').value||todayStr(); 
+  if(!person||isNaN(amt)||amt<=0)return; 
+  localData.debt[side].push({id:generateId(),person:person,amt:amt,reason:reason,date:date,payments:[]}); 
+  document.getElementById(side+'-person').value=''; 
+  document.getElementById(side+'-amt').value=''; 
+  document.getElementById(side+'-reason').value=''; 
+  document.getElementById(side+'-date').value=''; 
+  saveToCloud(); 
+  renderDebt(); 
+};
 
 function customConfirm(msg, onOk){
   var overlay=document.getElementById('confirm-overlay');
@@ -936,9 +979,9 @@ function openEditDebtDialog(side, id){
   saveBtn.onclick=function(){
     var p=document.getElementById('edit-debt-person').value.trim();
     var a=parseFloat(document.getElementById('edit-debt-amt').value);
-    var r=document.getElementById('edit-debt-reason').value.trim();
+    var r=document.getElementById('edit-debt-reason').value.trim() || 'بدون تفاصيل';
     var dt=document.getElementById('edit-debt-date').value;
-    if(!p||isNaN(a)||a<=0||!r) return;
+    if(!p||isNaN(a)||a<=0) return;
     debt.person=p; debt.amt=a; debt.reason=r; debt.date=dt||debt.date;
     cleanup(); saveToCloud(); renderDebt();
   };
