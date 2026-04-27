@@ -246,6 +246,7 @@ body{
     <div class="topbar-left">
       <div style="display:flex;align-items:center;gap:8px;">
         <input type="file" id="bg-upload" style="display:none" onchange="uploadBackground(event)" accept="image/*">
+        <input type="file" id="json-import" accept=".json" style="display:none" onchange="importJSON(event)"/>
         <div class="user-menu">
           <img id="user-avatar" class="user-avatar" src="" alt="" onclick="toggleUserMenu(event)"/>
           <div class="user-dropdown" id="user-dropdown">
@@ -253,6 +254,8 @@ body{
             <div class="user-dropdown-email" id="user-email"></div>
             <button class="menu-btn" onclick="togglePrivacy()">👁️ إخفاء / إظهار الأرقام</button>
             <button class="menu-btn" onclick="document.getElementById('bg-upload').click()">🖼️ تغيير الخلفية</button>
+            <button class="menu-btn" onclick="exportJSON()">💾 تنزيل نسخة احتياطية</button>
+            <button class="menu-btn" onclick="document.getElementById('json-import').click()">📂 استرجاع نسخة سابقة</button>
             <div class="theme-section">
               <div class="theme-label">لون التطبيق</div>
               <div class="theme-swatches">
@@ -584,7 +587,7 @@ function fmt(n) { return privacyMode ? '*****' : kwdFormatter.format(n||0); }
 function fmts(n) { return privacyMode ? '***' : numFormatter.format(n||0); }
 function todayStr(){ return new Date().toISOString().substring(0,10); }
 
-/* ── تصدير الواتساب (يظهر الأرقام الفعلية) ── */
+/* ── تصدير الواتساب ── */
 window.exportWhatsApp = function(page) {
   var realFmt = function(n) { return kwdFormatter.format(n||0); };
   var msg = "";
@@ -616,6 +619,40 @@ window.exportWhatsApp = function(page) {
     localData.debt.owed.forEach(function(o){ var p=o.payments.reduce(function(s,x){return s+x.amt;},0); msg += "• من " + o.person + ": " + realFmt(o.amt - p) + "\n"; });
   }
   window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+};
+
+/* ── النسخة الاحتياطية الشاملة JSON ── */
+window.exportJSON = function() {
+  var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(localData));
+  var dlAnchorElem = document.createElement('a');
+  dlAnchorElem.setAttribute("href", dataStr);
+  dlAnchorElem.setAttribute("download", "ميزانية_البيت_نسخة_احتياطية.json");
+  dlAnchorElem.click();
+  document.getElementById('user-dropdown').classList.remove('open');
+};
+
+window.importJSON = function(event) {
+  var file = event.target.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var importedData = JSON.parse(e.target.result);
+      if(importedData && importedData.budget) {
+        localData = {
+          budget: importedData.budget || {},
+          debt: importedData.debt || {owe:[], owed:[]},
+          savings: importedData.savings || []
+        };
+        saveToCloud();
+        refreshAllScreens();
+        alert('تم استرجاع النسخة الاحتياطية بنجاح! 🚀');
+      } else { alert('الملف غير صالح أو تالف.'); }
+    } catch(err) { alert('خطأ في قراءة الملف.'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+  document.getElementById('user-dropdown').classList.remove('open');
 };
 
 /* ── تسجيل الدخول وقائمة المستخدم ── */
@@ -1013,7 +1050,6 @@ function renderOverview(){
   Object.keys(all).sort().forEach(function(y){ [0,1,2,3,4,5,6,7,8,9,10,11].forEach(function(m){ if(!all[y]||!all[y][m])return; var d=all[y][m]; var inc=d.income.reduce(function(s,i){ return s+i.amt; },0); var exp=d.expense.reduce(function(s,i){ return s+i.amt; },0); if(inc===0&&exp===0)return; tI+=inc; tE+=exp; d.expense.forEach(function(i){ allCats[i.cat]=(allCats[i.cat]||0)+i.amt; }); labels.push(MN[m].substring(0,3)+" '"+String(y).substring(2)); dI.push(inc); dE.push(exp); rows.push({y:y,m:m,inc:inc,exp:exp,left:inc-exp}); }); });
   var tS = localData.savings.reduce(function(s,i){ return s + Math.max(0, i.amt - i.withdrawals.reduce((ss,w)=>ss+w.amt,0)); }, 0);
   
-  // حساب إجمالي الديون المطلوبة والطالبة
   var tOwe = localData.debt.owe.reduce(function(s, d) { return s + Math.max(0, d.amt - d.payments.reduce((ss,p)=>ss+p.amt,0)); }, 0);
   var tOwed = localData.debt.owed.reduce(function(s, d) { return s + Math.max(0, d.amt - d.payments.reduce((ss,p)=>ss+p.amt,0)); }, 0);
 
@@ -1051,62 +1087,10 @@ function renderOverview(){
   om.innerHTML=rows.slice().reverse().map(function(r){ var bw=r.inc>0?Math.min(100,Math.round((r.exp/r.inc)*100)):0; var col=r.left>=0?'var(--blue)':'var(--red)'; return '<div style="padding:11px 15px;border-bottom:0.5px solid var(--border);"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-size:13px;font-weight:500;">'+MN[r.m]+' '+r.y+'</span><span style="font-size:12px;color:'+col+';font-weight:500;">متبقي: '+fmt(r.left)+'</span></div><div style="display:flex;gap:14px;font-size:12px;color:var(--text2);margin-bottom:7px;"><span>دخل: <b style="color:var(--green)">'+fmt(r.inc)+'</b></span><span>مصاريف: <b style="color:var(--red)">'+fmt(r.exp)+'</b></span></div><div class="prog-bar"><div class="prog-fill" style="width:'+bw+'%;background:'+(r.left>=0?'#378ADD':'#D85A30')+'"></div></div></div>'; }).join('');
 }
 
-/* ── RENDER DEBT ── */
-function renderDebt(){
-  var dbData=localData.debt; var totalOwe=0,totalOwed=0;
-  ['owe','owed'].forEach(function(side){
-    var searchVal=(document.getElementById('search-'+side).value||'').trim().toLowerCase();
-    var persons={}; dbData[side].forEach(function(d){ if(!persons[d.person])persons[d.person]=[]; persons[d.person].push(d); });
-    var sideTotal=0; var listEl=document.getElementById(side+'-list'); var keys=Object.keys(persons);
-    if(searchVal) keys=keys.filter(function(k){ return k.toLowerCase().includes(searchVal)||persons[k].some(function(d){ return d.reason.toLowerCase().includes(searchVal); }); });
-    var s=sortDebtState[side];
-    if(s===1) keys=keys.sort(function(a,b){ return persons[b].reduce(function(ss,d){ return ss+d.amt; },0)-persons[a].reduce(function(ss,d){ return ss+d.amt; },0); });
-    else if(s===2) keys=keys.sort(function(a,b){ return persons[a].reduce(function(ss,d){ return ss+d.amt; },0)-persons[b].reduce(function(ss,d){ return ss+d.amt; },0); });
-    else if(s===3) keys=keys.sort(function(a,b){ return a.localeCompare(b,'ar'); });
-    if(keys.length===0){ listEl.innerHTML='<div class="empty">ما في مديونيات بعد</div>'; if(side==='owe')totalOwe=0; else totalOwed=0; return; }
-    listEl.innerHTML=keys.map(function(pname){
-      var debts=persons[pname];
-      var grossAmt=debts.reduce(function(s,d){ return s+d.amt; },0);
-      var paidAmt=debts.reduce(function(s,d){ return s+d.payments.reduce(function(ss,p){ return ss+p.amt; },0); },0);
-      var remaining=grossAmt-paidAmt; sideTotal+=Math.max(0,remaining);
-      var isCleared=remaining<=0; var bc=isCleared?'badge-clear':side==='owe'?'badge-owe':'badge-owed'; var bt=isCleared?'مسدّد':side==='owe'?'مدين':'دائن'; var pid='p-'+side+'-'+pname.replace(/[^a-zA-Z0-9\u0600-\u06FF]/g,'_'); var sc=isCleared?'var(--text2)':side==='owe'?'var(--red)':'var(--green)';
-      var dh=debts.map(function(d){ var paid=d.payments.reduce(function(s,p){ return s+p.amt; },0); var rem=d.amt-paid; var pct=Math.min(100,Math.round((paid/d.amt)*100)); var sc2=rem<=0?'sb-done':paid>0?'sb-partial':'sb-pending'; var st=rem<=0?'مسدّد':paid>0?'جزئي':'معلق'; var ph=d.payments.length>0?'<div class="debt-payments"><div style="font-size:11px;color:var(--text2);margin-bottom:4px;">الدفعات:</div>'+d.payments.map(function(p){ return '<div class="payment-row"><span>'+escH(p.note)+' — '+p.date+'</span><span style="display:flex;align-items:center;gap:8px;"><b style="color:var(--green)">'+fmt(p.amt)+'</b><button class="del-btn" onclick="deletePayment(\''+side+'\',\''+d.id+'\',\''+p.id+'\')">✕</button></span></div>'; }).join('')+'</div>':''; var pf=rem>0?'<div style="margin-top:6px;"><button class="pay-btn" onclick="togglePayForm(\''+d.id+'\')">+ سجّل دفعة</button><div id="pf-'+d.id+'" style="display:none;margin-top:7px;flex-wrap:wrap;gap:6px;"><input type="number" id="pay-amt-'+d.id+'" placeholder="المبلغ" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-family:var(--font);width:110px" min="0"/><input type="text" id="pay-note-'+d.id+'" placeholder="ملاحظة" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-family:var(--font);flex:1;min-width:100px"/><button class="add-btn" style="font-size:12px;padding:5px 11px" onclick="addPayment(\''+side+'\',\''+d.id+'\')">تأكيد</button></div></div>':'';
-      var actionBtns='<div style="display:flex;gap:6px;margin-top:8px;">'
-          +'<button class="pay-btn" style="color:var(--blue);border-color:var(--blue);" onclick="editDebt(\''+side+'\',\''+d.id+'\')">✏️ تعديل</button>'
-          +'<button class="pay-btn" style="color:var(--red);border-color:var(--red);" onclick="deleteDebt(\''+side+'\',\''+d.id+'\')">🗑️ حذف</button>'
-          +'</div>';
-      return '<div class="debt-item"><div class="debt-item-top"><div><div class="debt-reason">'+escH(d.reason)+'</div><div class="debt-date">'+d.date+'</div></div><span class="status-badge '+sc2+'">'+st+'</span></div><div class="debt-amounts"><span>المبلغ: <b>'+fmt(d.amt)+'</b></span><span>مدفوع: <b style="color:var(--green)">'+fmt(paid)+'</b></span><span>متبقي: <b style="color:'+(rem<=0?'var(--green)':'var(--red)')+'">'+fmt(Math.max(0,rem))+'</b></span></div><div class="prog-bar" style="margin-bottom:8px;"><div class="prog-fill" style="width:'+pct+'%;background:'+(rem<=0?'#1D9E75':'#378ADD')+'"></div></div>'+ph+pf+actionBtns+'</div>'; }).join('');
-      return '<div class="person-card" style="margin:10px;border-radius:var(--r-lg);"><div class="person-head" onclick="togglePersonBody(\''+pid+'\')"><span class="person-name-row"><span style="width:32px;height:32px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0;">'+pname.charAt(0)+'</span>'+escH(pname)+'<span class="person-badge '+bc+'">'+bt+'</span></span><span style="font-size:13px;font-weight:500;color:'+sc+';">'+(isCleared?'✓ مسدّد':fmt(remaining))+'</span></div><div class="person-body" id="pb-'+pid+'">'+dh+'<div style="padding:10px 15px;background:var(--surface2);display:flex;justify-content:space-between;font-size:12px;color:var(--text2);"><span>إجمالي: <b style="color:var(--text)">'+fmt(grossAmt)+'</b></span><span>متبقي: <b style="color:'+(isCleared?'var(--green)':side==='owe'?'var(--red)':'var(--green)')+'">'+fmt(Math.max(0,remaining))+'</b></span></div></div></div>';
-    }).join('');
-    if(side==='owe')totalOwe=sideTotal; else totalOwed=sideTotal;
-  });
-  document.getElementById('d-owe').textContent=fmt(totalOwe);
-  document.getElementById('d-owed').textContent=fmt(totalOwed);
-}
-
-/* ── EXPORT EXCEL ── */
-window.exportExcel=function(){ var all=localData.budget; var dbData=localData.debt; var wb=XLSX.utils.book_new();
-Object.keys(all).sort().forEach(function(y){ [0,1,2,3,4,5,6,7,8,9,10,11].forEach(function(m){ if(!all[y]||!all[y][m])return; var d=all[y][m]; var tI=d.income.reduce(function(s,i){ return s+i.amt; },0); var tE=d.expense.reduce(function(s,i){ return s+i.amt; },0); if(tI===0&&tE===0)return; var rows=[['ميزانية '+MN[m]+' '+y],[]]; rows.push(['── المدخول ──'],['البند','المبلغ (د.ك)']); d.income.forEach(function(i){ rows.push([i.name,i.amt]); }); rows.push(['إجمالي المدخول',tI],[]); rows.push(['── المصاريف ──'],['البند','الفئة','المبلغ (د.ك)']); d.expense.forEach(function(i){ rows.push([i.name,i.cat,i.amt]); }); rows.push(['إجمالي المصاريف','',tE],[]); rows.push([],['المدخول',tI],['المصاريف',tE],['المتبقي',tI-tE]); var ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:28},{wch:16},{wch:16}]; XLSX.utils.book_append_sheet(wb,ws,(MN[m]+' '+y).substring(0,31)); }); });
-var sr=[['ملخص جميع الأشهر'],[],['الشهر','المدخول','المصاريف','المتبقي']]; var gI=0,gE=0; Object.keys(all).sort().forEach(function(y){ [0,1,2,3,4,5,6,7,8,9,10,11].forEach(function(m){ if(!all[y]||!all[y][m])return; var d=all[y][m]; var tI=d.income.reduce(function(s,i){ return s+i.amt; },0); var tE=d.expense.reduce(function(s,i){ return s+i.amt; },0); if(tI===0&&tE===0)return; gI+=tI; gE+=tE; sr.push([MN[m]+' '+y,tI,tE,tI-tE]); }); });
-sr.push([],['الإجمالي',gI,gE,gI-gE]); var ws2=XLSX.utils.aoa_to_sheet(sr); ws2['!cols']=[{wch:20},{wch:18},{wch:18},{wch:18}]; XLSX.utils.book_append_sheet(wb,ws2,'الإجمالي'); 
-
-// تصدير المدخرات المركزية
-var savRows=[['المدخرات المركزية'],[],['البند','تاريخ الإضافة','المبلغ الأساسي (د.ك)','المسحوب (د.ك)','الصافي الحالي (د.ك)']];
-localData.savings.forEach(function(s){
-  var wTot = s.withdrawals.reduce(function(acc,w){return acc+w.amt;},0);
-  savRows.push([s.name, s.date||'', s.amt, wTot, Math.max(0, s.amt-wTot)]);
-});
-var wsSav=XLSX.utils.aoa_to_sheet(savRows); wsSav['!cols']=[{wch:24},{wch:16},{wch:18},{wch:18},{wch:18}]; XLSX.utils.book_append_sheet(wb,wsSav,'المدخرات');
-
-// تصدير المديونيات
-var dr=[['المديونيات'],[],['النوع','الشخص','السبب','التاريخ','المبلغ','المدفوع','المتبقي','الحالة']]; ['owe','owed'].forEach(function(side){ dbData[side].forEach(function(d){ var paid=d.payments.reduce(function(s,p){ return s+p.amt; },0); var rem=Math.max(0,d.amt-paid); dr.push([side==='owe'?'مطلوب مني':'طالب',d.person,d.reason,d.date,d.amt,paid,rem,rem<=0?'مسدّد':paid>0?'جزئي':'معلق']); }); });
-var ws3=XLSX.utils.aoa_to_sheet(dr); ws3['!cols']=[{wch:14},{wch:16},{wch:24},{wch:12},{wch:14},{wch:14},{wch:14},{wch:10}]; XLSX.utils.book_append_sheet(wb,ws3,'المديونيات'); XLSX.writeFile(wb,'ميزانية_البيت.xlsx'); };
-
 /* ── IMPORT EXCEL ── */
 window.importExcel=function(event){ var file=event.target.files[0]; if(!file)return; var reader=new FileReader();
 reader.onload=function(e){ try{ var wb=XLSX.read(e.target.result,{type:'array'}); var imported=0; 
 wb.SheetNames.forEach(function(sn){ 
-  // استيراد المدخرات وتأمين التدبيل
   if(sn === 'المدخرات') {
      var sRows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:''});
      sRows.forEach(function(row){
@@ -1115,7 +1099,7 @@ wb.SheetNames.forEach(function(sn){
         var a=parseFloat(r2)||0;
         if(a>0) {
            var ext = localData.savings.find(s => s.name === r0);
-           if(ext) { ext.amt = Math.max(ext.amt, a); } // حماية من التدبيل (يحدث فقط إذا كان المبلغ أكبر)
+           if(ext) { ext.amt = Math.max(ext.amt, a); } 
            else { localData.savings.push({id:generateId(), name:r0, date:r1||todayStr(), amt:a, withdrawals:[]}); }
         }
      });
@@ -1123,7 +1107,6 @@ wb.SheetNames.forEach(function(sn){
      return;
   }
 
-  // استيراد الأشهر
   var mi=MN.findIndex(function(m){ return sn.startsWith(m); }); if(mi===-1)return; 
   var ym=sn.match(/(\d{4})/); if(!ym)return; var y=parseInt(ym[1]),m=mi; var d=getMonthData(y,m); 
   
@@ -1139,7 +1122,6 @@ wb.SheetNames.forEach(function(sn){
     
     if(sec==='income'){ var a=parseFloat(r1)||0; if(a>0)newInc.push({id:generateId(),name:r0,amt:a}); } 
     else if(sec==='expense'){ var a2=parseFloat(r2)||0; if(a2>0)newExp.push({id:generateId(),name:r0,cat:r1||'أخرى',amt:a2}); } 
-    // التوافق القديم: لو لقى مدخرات بالشهور يرميها للمركزية مع منع التدبيل
     else if(sec==='savings' || (r0.includes('المدخرات')&&r0.includes('──'))){
        if(sec!=='savings') sec='savings';
        else { 
