@@ -119,6 +119,13 @@ body{
 .irow-right{display:flex;align-items:center;gap:9px;flex-shrink:0;}
 .iamt{font-size:13px;font-weight:500;}
 .iamt-g{color:var(--green);}.iamt-r{color:var(--red);}
+
+/* DEBT TABS STYLING */
+.debt-tab-owe { border-radius:var(--r-md) var(--r-md) 0 0; }
+.debt-tab-owe.active { background:var(--red-bg); color:var(--red) !important; border-bottom:2px solid var(--red) !important; font-weight:bold; }
+.debt-tab-owed { border-radius:var(--r-md) var(--r-md) 0 0; }
+.debt-tab-owed.active { background:var(--green-bg); color:var(--green) !important; border-bottom:2px solid var(--green) !important; font-weight:bold; }
+
 /* CONTEXT MENU */
 .ctx-menu{position:fixed;background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--r-lg);padding:6px;min-width:150px;z-index:500;box-shadow:0 4px 20px rgba(0,0,0,0.18);display:none;}
 .ctx-menu.open{display:block;}
@@ -241,6 +248,7 @@ body{
           <div class="user-dropdown" id="user-dropdown">
             <div class="user-dropdown-name" id="user-name"></div>
             <div class="user-dropdown-email" id="user-email"></div>
+            <button class="menu-btn" onclick="togglePrivacy()">👁️ إخفاء / إظهار الأرقام</button>
             <button class="menu-btn" onclick="document.getElementById('bg-upload').click()">🖼️ تغيير الخلفية</button>
             <div class="theme-section">
               <div class="theme-label">لون التطبيق</div>
@@ -296,7 +304,7 @@ body{
         <div style="display:flex;align-items:center;gap:7px;">
           <span class="box-tot" id="m-inc-t"></span>
           <button class="sort-btn" id="sort-income" onclick="cycleSort('income')">ترتيب ↕</button>
-          <button class="toggle-btn" onclick="toggleVisibility('inc-section')">🔽</button>
+          <button class="toggle-btn" id="btn-inc-section" onclick="toggleVisibility('inc-section')">🔽</button>
         </div>
       </div>
       <div id="inc-section">
@@ -315,7 +323,7 @@ body{
         <div style="display:flex;align-items:center;gap:7px;">
           <span class="box-tot" id="m-exp-t"></span>
           <button class="sort-btn" id="sort-expense" onclick="cycleSort('expense')">ترتيب ↕</button>
-          <button class="toggle-btn" onclick="toggleVisibility('exp-section')">🔽</button>
+          <button class="toggle-btn" id="btn-exp-section" onclick="toggleVisibility('exp-section')">🔽</button>
         </div>
       </div>
       <div id="exp-section">
@@ -355,7 +363,7 @@ body{
         <div style="display:flex;align-items:center;gap:7px;">
           <span class="box-tot" id="m-sav-t"></span>
           <button class="sort-btn" id="sort-savings" onclick="cycleSort('savings')">ترتيب ↕</button>
-          <button class="toggle-btn" onclick="toggleVisibility('sav-section')">🔽</button>
+          <button class="toggle-btn" id="btn-sav-section" onclick="toggleVisibility('sav-section')">🔽</button>
         </div>
       </div>
       <div id="sav-section">
@@ -405,8 +413,8 @@ body{
       <div class="card"><div class="card-label">طالب (الناس مدينة لي)</div><div class="card-val cv-g" id="d-owed">0 د.ك</div></div>
     </div>
     <div style="display:flex;gap:4px;margin-bottom:14px;border-bottom:0.5px solid var(--border);">
-      <button class="main-tab active" id="dt-owe-btn" onclick="switchDebtTab('owe')" style="padding:8px 16px;font-size:13px;">مطلوب مني</button>
-      <button class="main-tab" id="dt-owed-btn" onclick="switchDebtTab('owed')" style="padding:8px 16px;font-size:13px;">طالب</button>
+      <button class="main-tab active debt-tab-owe" id="dt-owe-btn" onclick="switchDebtTab('owe')" style="padding:8px 16px;font-size:13px;">مطلوب مني</button>
+      <button class="main-tab debt-tab-owed" id="dt-owed-btn" onclick="switchDebtTab('owed')" style="padding:8px 16px;font-size:13px;">طالب</button>
     </div>
     <div id="dt-owe">
       <div class="box">
@@ -469,8 +477,6 @@ let localData={budget:{},debt:{owe:[],owed:[]}};
 let currentUser=null, unsubSnapshot=null;
 let sortState={income:0,expense:0,savings:0};
 let sortDebtState={owe:0,owed:0};
-const SORT_LABELS=['ترتيب ↕','تنازلي ↓','تصاعدي ↑','حسب القسم'];
-const SORT_DEBT_LABELS=['ترتيب ↕','تنازلي ↓','تصاعدي ↑','حسب الاسم'];
 let ctxType=null, ctxId=null, editingId=null;
 
 /* ── توليد هوية فريدة UUID ── */
@@ -478,13 +484,16 @@ function generateId() {
   return typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + Math.random().toString(36).substring(2);
 }
 
-/* ── إظهار وإخفاء القوائم (Toggle) ── */
+/* ── إظهار وإخفاء القوائم (Toggle) مع تغيير السهم ── */
 window.toggleVisibility = function(id) {
   var el = document.getElementById(id);
+  var btn = document.getElementById('btn-' + id);
   if(el.style.display === 'none') {
     el.style.display = 'block';
+    if(btn) btn.textContent = '🔽';
   } else {
     el.style.display = 'none';
+    if(btn) btn.textContent = '◀️';
   }
 };
 
@@ -537,21 +546,34 @@ window.setTheme = function(t) {
   loadBgFromIDB(); 
 })();
 
-/* ── تنسيق العملة الدولي Intl ── */
+/* ── زر الخصوصية وتنسيق الأرقام ── */
+let privacyMode = localStorage.getItem('budget-privacy') === 'true';
+
+window.togglePrivacy = function() {
+  privacyMode = !privacyMode;
+  localStorage.setItem('budget-privacy', privacyMode);
+  renderMonth();
+  if(document.getElementById('page-overview').classList.contains('active')) renderOverview();
+  if(document.getElementById('page-debt').classList.contains('active')) renderDebt();
+  document.getElementById('user-dropdown').classList.remove('open');
+};
+
 const kwdFormatter = new Intl.NumberFormat('ar-KW', { style: 'currency', currency: 'KWD', minimumFractionDigits: 0, maximumFractionDigits: 3 });
 const numFormatter = new Intl.NumberFormat('ar-KW', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
-function fmt(n) { return kwdFormatter.format(n||0); }
-function fmts(n) { return numFormatter.format(n||0); }
+
+function fmt(n) { return privacyMode ? '*****' : kwdFormatter.format(n||0); }
+function fmts(n) { return privacyMode ? '***' : numFormatter.format(n||0); }
 function todayStr(){ return new Date().toISOString().substring(0,10); }
 
-/* ── تصدير الواتساب ── */
+/* ── تصدير الواتساب (دائماً يظهر الأرقام الفعلية) ── */
 window.exportWhatsApp = function(page) {
+  var realFmt = function(n) { return kwdFormatter.format(n||0); };
   var msg = "";
   var d = getMonthData(CY, CM);
   if (page === 'month') {
     var tI = d.income.reduce(function(s,i){return s+i.amt;},0);
     var tE = d.expense.reduce(function(s,i){return s+i.amt;},0);
-    msg = "💰 *تقرير ميزانية شهر " + MN[CM] + " " + CY + "*\n\n🟢 الدخل: " + fmt(tI) + "\n🔴 المصاريف: " + fmt(tE) + "\n🔹 المتبقي: " + fmt(tI - tE);
+    msg = "💰 *تقرير ميزانية شهر " + MN[CM] + " " + CY + "*\n\n🟢 الدخل: " + realFmt(tI) + "\n🔴 المصاريف: " + realFmt(tE) + "\n🔹 المتبقي: " + realFmt(tI - tE);
   } else if (page === 'overview') {
     var all = localData.budget; var tI=0, tE=0, tS=0;
     Object.keys(all).forEach(function(y){ Object.keys(all[y]).forEach(function(m){
@@ -559,17 +581,17 @@ window.exportWhatsApp = function(page) {
       tE += all[y][m].expense.reduce(function(s,i){return s+i.amt;},0);
       tS += all[y][m].savings.reduce(function(s,i){return s+(i.amt||0);},0);
     });});
-    msg = "📊 *الإجمالي التراكمي*\n\n🟢 الدخل: " + fmt(tI) + "\n🔴 المصاريف: " + fmt(tE) + "\n🔹 المتبقي (فائض): " + fmt(tI-tE) + "\n🏦 المدخرات الفعلية: " + fmt(tS);
+    msg = "📊 *الإجمالي التراكمي*\n\n🟢 الدخل: " + realFmt(tI) + "\n🔴 المصاريف: " + realFmt(tE) + "\n🔹 المتبقي (فائض): " + realFmt(tI-tE) + "\n🏦 المدخرات الفعلية: " + realFmt(tS);
   } else if (page === 'savings') {
     var tS = d.savings.reduce(function(s,i){return s+(i.amt||0);},0);
     msg = "🏦 *المدخرات - شهر " + MN[CM] + " " + CY + "*\n\n";
-    d.savings.forEach(function(s){ msg += "• " + s.name + ": " + fmt(s.amt) + "\n"; });
-    msg += "\n*الإجمالي:* " + fmt(tS);
+    d.savings.forEach(function(s){ msg += "• " + s.name + ": " + realFmt(s.amt) + "\n"; });
+    msg += "\n*الإجمالي:* " + realFmt(tS);
   } else if (page === 'debt') {
     msg = "🚩 *تقرير المديونية*\n\n⚠️ *مطلوب مني:*\n";
-    localData.debt.owe.forEach(function(o){ var p=o.payments.reduce(function(s,x){return s+x.amt;},0); msg += "• لـ " + o.person + ": " + fmt(o.amt - p) + "\n"; });
+    localData.debt.owe.forEach(function(o){ var p=o.payments.reduce(function(s,x){return s+x.amt;},0); msg += "• لـ " + o.person + ": " + realFmt(o.amt - p) + "\n"; });
     msg += "\n✅ *مدين لي:*\n";
-    localData.debt.owed.forEach(function(o){ var p=o.payments.reduce(function(s,x){return s+x.amt;},0); msg += "• من " + o.person + ": " + fmt(o.amt - p) + "\n"; });
+    localData.debt.owed.forEach(function(o){ var p=o.payments.reduce(function(s,x){return s+x.amt;},0); msg += "• من " + o.person + ": " + realFmt(o.amt - p) + "\n"; });
   }
   window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
 };
@@ -633,7 +655,6 @@ function processData(d) {
   ['owe', 'owed'].forEach(side => {
       ensureStringId(localData.debt[side] || []);
       (localData.debt[side] || []).forEach(debtItem => {
-        // ترقيع ثغرة المديونيات القديمة
         if(!debtItem.payments) { debtItem.payments = []; migrated = true; }
         ensureStringId(debtItem.payments);
       });
@@ -663,7 +684,6 @@ async function initData() {
       if(!snap.exists())return; 
       processData(snap.data()); 
       setSyncDot('ok'); renderMonth(); 
-      // تحديث بقية الشاشات إذا كانت مفتوحة
       if(document.getElementById('page-overview').classList.contains('active')) renderOverview();
       if(document.getElementById('page-debt').classList.contains('active')) renderDebt();
     }); 
@@ -961,16 +981,39 @@ var sr=[['ملخص جميع الأشهر'],[],['الشهر','المدخول','ا
 sr.push([],['الإجمالي',gI,gE,gI-gE]); var ws2=XLSX.utils.aoa_to_sheet(sr); ws2['!cols']=[{wch:20},{wch:18},{wch:18},{wch:18}]; XLSX.utils.book_append_sheet(wb,ws2,'الإجمالي'); var dr=[['المديونيات'],[],['النوع','الشخص','السبب','التاريخ','المبلغ','المدفوع','المتبقي','الحالة']]; ['owe','owed'].forEach(function(side){ dbData[side].forEach(function(d){ var paid=d.payments.reduce(function(s,p){ return s+p.amt; },0); var rem=Math.max(0,d.amt-paid); dr.push([side==='owe'?'مطلوب مني':'طالب',d.person,d.reason,d.date,d.amt,paid,rem,rem<=0?'مسدّد':paid>0?'جزئي':'معلق']); }); });
 var ws3=XLSX.utils.aoa_to_sheet(dr); ws3['!cols']=[{wch:14},{wch:16},{wch:24},{wch:12},{wch:14},{wch:14},{wch:14},{wch:10}]; XLSX.utils.book_append_sheet(wb,ws3,'المديونيات'); XLSX.writeFile(wb,'ميزانية_البيت.xlsx'); };
 
-/* ── IMPORT EXCEL (تحديث جميع الأقسام بعد الاستيراد) ── */
+/* ── IMPORT EXCEL (استيراد ذكي يحافظ على البيانات إذا ما كانت موجودة بالإكسيل) ── */
 window.importExcel=function(event){ var file=event.target.files[0]; if(!file)return; var reader=new FileReader();
-reader.onload=function(e){ try{ var wb=XLSX.read(e.target.result,{type:'array'}); var imported=0; wb.SheetNames.forEach(function(sn){ var mi=MN.findIndex(function(m){ return sn.startsWith(m); }); if(mi===-1)return; var ym=sn.match(/(\d{4})/); if(!ym)return; var y=parseInt(ym[1]),m=mi; var d=getMonthData(y,m); 
-d.income = []; d.expense = []; d.savings = [];
-var rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:''}); var sec=''; rows.forEach(function(row){ var r0=String(row[0]||'').trim(),r1=String(row[1]||'').trim(),r2=String(row[2]||'').trim(); if(r0.includes('المدخول')&&r0.includes('──')){sec='income';return;} if(r0.includes('المصاريف')&&r0.includes('──')){sec='expense';return;} if(r0.includes('المدخرات')&&r0.includes('──')){sec='savings';return;} if(!r0||r0.includes('إجمالي')||r0==='البند'||r0==='المتبقي'||r0==='المدخول'||r0==='المصاريف')return; if(sec==='income'){ var a=parseFloat(r1)||0; if(a>0)d.income.push({id:generateId(),name:r0,amt:a}); } else if(sec==='expense'){ var a2=parseFloat(r2)||0; if(a2>0)d.expense.push({id:generateId(),name:r0,cat:r1||'أخرى',amt:a2}); } else if(sec==='savings'){ d.savings.push({id:generateId(),name:r0,amt:parseFloat(r1)||0});
-} }); imported++; }); event.target.value=''; saveToCloud(); 
-// تحديث كل الشاشات
+reader.onload=function(e){ try{ var wb=XLSX.read(e.target.result,{type:'array'}); var imported=0; 
+wb.SheetNames.forEach(function(sn){ 
+  var mi=MN.findIndex(function(m){ return sn.startsWith(m); }); if(mi===-1)return; 
+  var ym=sn.match(/(\d{4})/); if(!ym)return; var y=parseInt(ym[1]),m=mi; var d=getMonthData(y,m); 
+  
+  var newInc = [], newExp = [], newSav = [];
+  var hasInc = false, hasExp = false, hasSav = false;
+
+  var rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:''}); var sec=''; 
+  rows.forEach(function(row){ 
+    var r0=String(row[0]||'').trim(),r1=String(row[1]||'').trim(),r2=String(row[2]||'').trim(); 
+    if(r0.includes('المدخول')&&r0.includes('──')){sec='income'; hasInc=true; return;} 
+    if(r0.includes('المصاريف')&&r0.includes('──')){sec='expense'; hasExp=true; return;} 
+    if(r0.includes('المدخرات')&&r0.includes('──')){sec='savings'; hasSav=true; return;} 
+    if(!r0||r0.includes('إجمالي')||r0==='البند'||r0==='المتبقي'||r0==='المدخول'||r0==='المصاريف')return; 
+    
+    if(sec==='income'){ var a=parseFloat(r1)||0; if(a>0)newInc.push({id:generateId(),name:r0,amt:a}); } 
+    else if(sec==='expense'){ var a2=parseFloat(r2)||0; if(a2>0)newExp.push({id:generateId(),name:r0,cat:r1||'أخرى',amt:a2}); } 
+    else if(sec==='savings'){ newSav.push({id:generateId(),name:r0,amt:parseFloat(r1)||0}); } 
+  }); 
+
+  if(hasInc) d.income = newInc;
+  if(hasExp) d.expense = newExp;
+  if(hasSav) d.savings = newSav;
+
+  imported++; 
+}); 
+event.target.value=''; saveToCloud(); 
 renderMonth(); renderOverview(); renderDebt();
-alert(imported>0?'✓ تم استيراد '+imported+' شهر بنجاح!':'ما لقيت بيانات.'); }catch(err){ alert('حصل خطأ أثناء الاستيراد.');
-} }; reader.readAsArrayBuffer(file); };
+alert(imported>0?'✓ تم استيراد '+imported+' شهر بنجاح!':'ما لقيت بيانات.'); }catch(err){ alert('حصل خطأ أثناء الاستيراد.'); } }; 
+reader.readAsArrayBuffer(file); };
 
 /* ── AUTOCOMPLETE CACHE ── */
 var acCache = {};
