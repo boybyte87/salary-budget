@@ -511,7 +511,7 @@ body{
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
 const firebaseConfig={apiKey:"AIzaSyDMSFTbFGetq1WsCo-mVsNUbHVcqhC4Tow",authDomain:"budget-home-1.firebaseapp.com",projectId:"budget-home-1",storageBucket:"budget-home-1.firebasestorage.app",messagingSenderId:"1082972153053",appId:"1:1082972153053:web:ba31f2c4da3cf95e35e734"};
 const app=initializeApp(firebaseConfig);
@@ -687,7 +687,10 @@ window.importJSON = function(event) {
 
 /* ── تسجيل الدخول وقائمة المستخدم ── */
 window.signInWithGoogle = function() { 
-  signInWithRedirect(auth, provider).catch(function(e) { console.error("Login Error:", e); alert('تعذّر بدء تسجيل الدخول. حاول مرة ثانية.'); });
+  signInWithPopup(auth, provider).catch(function(e) { 
+    console.error("Login Error:", e); 
+    alert('تسجيل الدخول انرفض من المتصفح! تأكد إنك ضايف رابط موقعك في إعدادات فايربيس (Authorized domains).'); 
+  });
 };
 window.signOutUser = async function() { 
   if(unsubSnapshot) unsubSnapshot(); 
