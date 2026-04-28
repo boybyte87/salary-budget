@@ -817,10 +817,31 @@ function refreshAllScreens() {
   if(document.getElementById('page-savings').classList.contains('active')) renderSavings();
 }
 
-/* ── SORT ── */
-window.cycleSort=function(type){ sortState[type]=(sortState[type]+1)%4; var s=sortState[type]; var btn=document.getElementById('sort-'+type); if(btn){ btn.textContent=SORT_LABELS[s]; btn.classList.toggle('active',s!==0); } if(type==='savings') renderSavings(); else renderMonth(); };
-window.cycleDebtSort=function(side){ sortDebtState[side]=(sortDebtState[side]+1)%4; var s=sortDebtState[side]; var btn=document.getElementById('sort-'+side); if(btn){ btn.textContent=SORT_DEBT_LABELS[s]; btn.classList.toggle('active',s!==0); } renderDebt(); };
+/* ── الترتيب المصلح والشغال 100% ── */
+window.cycleSort = function(type) {
+  const SL = ['ترتيب ↕', 'تنازلي ↓', 'تصاعدي ↑', 'حسب القسم'];
+  // المدخرات والدخل لهم 3 وضعيات، والمصاريف لها 4 (عشان فيها ترتيب حسب القسم)
+  sortState[type] = (sortState[type] + 1) % (type === 'expense' ? 4 : 3); 
+  var s = sortState[type];
+  var btn = document.getElementById('sort-' + type);
+  if (btn) {
+    btn.textContent = SL[s];
+    btn.classList.toggle('active', s !== 0);
+  }
+  if (type === 'savings') renderSavings(); else renderMonth();
+};
 
+window.cycleDebtSort = function(side) {
+  const SLD = ['ترتيب ↕', 'تنازلي ↓', 'تصاعدي ↑', 'حسب الاسم'];
+  sortDebtState[side] = (sortDebtState[side] + 1) % 4;
+  var s = sortDebtState[side];
+  var btn = document.getElementById('sort-' + side);
+  if (btn) {
+    btn.textContent = SLD[s];
+    btn.classList.toggle('active', s !== 0);
+  }
+  renderDebt();
+};
 function applySort(arr,type){
   var s=sortState[type]; var a=arr.slice();
   if(s===1) return a.sort(function(x,y){ return (y.amt||0)-(x.amt||0); });
