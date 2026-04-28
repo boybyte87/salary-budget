@@ -511,7 +511,7 @@ body{
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
 const firebaseConfig={apiKey:"AIzaSyDMSFTbFGetq1WsCo-mVsNUbHVcqhC4Tow",authDomain:"budget-home-1.firebaseapp.com",projectId:"budget-home-1",storageBucket:"budget-home-1.firebasestorage.app",messagingSenderId:"1082972153053",appId:"1:1082972153053:web:ba31f2c4da3cf95e35e734"};
 const app=initializeApp(firebaseConfig);
@@ -687,26 +687,7 @@ window.importJSON = function(event) {
 
 /* ── تسجيل الدخول وقائمة المستخدم ── */
 window.signInWithGoogle = function() { 
-  signInWithPopup(auth, provider)
-    .then(function(result) {
-      // نجح التسجيل
-      console.log("✓ تم تسجيل الدخول:", result.user.displayName);
-    })
-    .catch(function(e) { 
-      console.error("Login Error:", e); 
-      
-      // رسائل خطأ مخصصة حسب نوع المشكلة
-      if(e.code === 'auth/popup-blocked') {
-        alert('⚠️ المتصفح منع النافذة المنبثقة! فعّل النوافذ المنبثقة وحاول مرة ثانية.');
-      } else if(e.code === 'auth/popup-closed-by-user') {
-        // المستخدم أغلق النافذة - ما نحتاج alert
-        console.log('المستخدم ألغى العملية');
-      } else if(e.code === 'auth/unauthorized-domain') {
-        alert('⚠️ تسجيل الدخول مرفوض! تأكد إنك ضايف رابط الموقع في إعدادات Firebase (Authorized domains).');
-      } else {
-        alert('❌ حصل خطأ في تسجيل الدخول: ' + (e.message || 'حاول مرة ثانية'));
-      }
-    });
+  signInWithRedirect(auth, provider).catch(function(e) { console.error("Login Error:", e); alert('تعذّر بدء تسجيل الدخول. حاول مرة ثانية.'); });
 };
 window.signOutUser = async function() { 
   if(unsubSnapshot) unsubSnapshot(); 
@@ -836,31 +817,10 @@ function refreshAllScreens() {
   if(document.getElementById('page-savings').classList.contains('active')) renderSavings();
 }
 
-/* ── الترتيب المصلح والشغال 100% ── */
-window.cycleSort = function(type) {
-  const SL = ['ترتيب ↕', 'تنازلي ↓', 'تصاعدي ↑', 'حسب القسم'];
-  // المدخرات والدخل لهم 3 وضعيات، والمصاريف لها 4 (عشان فيها ترتيب حسب القسم)
-  sortState[type] = (sortState[type] + 1) % (type === 'expense' ? 4 : 3); 
-  var s = sortState[type];
-  var btn = document.getElementById('sort-' + type);
-  if (btn) {
-    btn.textContent = SL[s];
-    btn.classList.toggle('active', s !== 0);
-  }
-  if (type === 'savings') renderSavings(); else renderMonth();
-};
+/* ── SORT ── */
+window.cycleSort=function(type){ sortState[type]=(sortState[type]+1)%4; var s=sortState[type]; var btn=document.getElementById('sort-'+type); if(btn){ btn.textContent=SORT_LABELS[s]; btn.classList.toggle('active',s!==0); } if(type==='savings') renderSavings(); else renderMonth(); };
+window.cycleDebtSort=function(side){ sortDebtState[side]=(sortDebtState[side]+1)%4; var s=sortDebtState[side]; var btn=document.getElementById('sort-'+side); if(btn){ btn.textContent=SORT_DEBT_LABELS[s]; btn.classList.toggle('active',s!==0); } renderDebt(); };
 
-window.cycleDebtSort = function(side) {
-  const SLD = ['ترتيب ↕', 'تنازلي ↓', 'تصاعدي ↑', 'حسب الاسم'];
-  sortDebtState[side] = (sortDebtState[side] + 1) % 4;
-  var s = sortDebtState[side];
-  var btn = document.getElementById('sort-' + side);
-  if (btn) {
-    btn.textContent = SLD[s];
-    btn.classList.toggle('active', s !== 0);
-  }
-  renderDebt();
-};
 function applySort(arr,type){
   var s=sortState[type]; var a=arr.slice();
   if(s===1) return a.sort(function(x,y){ return (y.amt||0)-(x.amt||0); });
@@ -1337,221 +1297,6 @@ function setupAutocomplete(){
   window.addEventListener('scroll',closeAC,true);
   window.addEventListener('resize',closeAC);
 }
-/* ── EXPORT EXCEL ── */
-window.exportExcel = function() {
-  try {
-    var all = localData.budget;
-    var dbData = localData.debt;
-    var wb = XLSX.utils.book_new();
-
-    // 1. أوراق الأشهر
-    Object.keys(all).sort().forEach(function(y) {
-      [0,1,2,3,4,5,6,7,8,9,10,11].forEach(function(m) {
-        if (!all[y] || !all[y][m]) return;
-        var d = all[y][m];
-        var tI = d.income.reduce(function(s, i) { return s + i.amt; }, 0);
-        var tE = d.expense.reduce(function(s, i) { return s + i.amt; }, 0);
-        if (tI === 0 && tE === 0) return;
-
-        var rows = [['ميزانية ' + MN[m] + ' ' + y], []];
-        rows.push(['── المدخول ──'], ['البند', 'المبلغ (د.ك)']);
-        d.income.forEach(function(i) { rows.push([i.name, i.amt]); });
-        rows.push(['إجمالي المدخول', tI], []);
-
-        rows.push(['── المصاريف ──'], ['البند', 'الفئة', 'المبلغ (د.ك)']);
-        d.expense.forEach(function(i) { rows.push([i.name, i.cat, i.amt]); });
-        rows.push(['إجمالي المصاريف', '', tE], []);
-
-        rows.push([], ['المدخول', tI], ['المصاريف', tE], ['المتبقي', tI - tE]);
-        var ws = XLSX.utils.aoa_to_sheet(rows);
-        ws['!cols'] = [{ wch: 28 }, { wch: 16 }, { wch: 16 }];
-        XLSX.utils.book_append_sheet(wb, ws, (MN[m] + ' ' + y).substring(0, 31));
-      });
-    });
-
-    // 2. ورقة الإجمالي العام
-    var sr = [['ملخص جميع الأشهر'], [], ['الشهر', 'المدخول', 'المصاريف', 'المتبقي']];
-    var gI = 0, gE = 0;
-    Object.keys(all).sort().forEach(function(y) {
-      [0,1,2,3,4,5,6,7,8,9,10,11].forEach(function(m) {
-        if (!all[y] || !all[y][m]) return;
-        var d = all[y][m];
-        var tI = d.income.reduce(function(s, i) { return s + i.amt; }, 0);
-        var tE = d.expense.reduce(function(s, i) { return s + i.amt; }, 0);
-        if (tI === 0 && tE === 0) return;
-        gI += tI; gE += tE;
-        sr.push([MN[m] + ' ' + y, tI, tE, tI - tE]);
-      });
-    });
-    sr.push([], ['الإجمالي', gI, gE, gI - gE]);
-    var ws2 = XLSX.utils.aoa_to_sheet(sr);
-    ws2['!cols'] = [{ wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
-    XLSX.utils.book_append_sheet(wb, ws2, 'الإجمالي');
-
-    // 3. ورقة المدخرات
-    var savRows = [['المدخرات المركزية'], [], ['البند', 'تاريخ الإضافة', 'المبلغ الأساسي', 'المسحوب', 'الصافي الحالي']];
-    (localData.savings || []).forEach(function(s) {
-      var wTot = (s.withdrawals || []).reduce(function(acc, w) { return acc + w.amt; }, 0);
-      savRows.push([s.name, s.date || '', s.amt, wTot, Math.max(0, s.amt - wTot)]);
-    });
-    var wsSav = XLSX.utils.aoa_to_sheet(savRows);
-    wsSav['!cols'] = [{ wch: 24 }, { wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
-    XLSX.utils.book_append_sheet(wb, wsSav, 'المدخرات');
-
-    // 4. ورقة المديونيات
-    var dr = [['المديونيات'], [], ['النوع', 'الشخص', 'السبب', 'التاريخ', 'المبلغ', 'المدفوع', 'المتبقي', 'الحالة']];
-    ['owe', 'owed'].forEach(function(side) {
-      (dbData[side] || []).forEach(function(d) {
-        var paid = (d.payments || []).reduce(function(s, p) { return s + p.amt; }, 0);
-        var rem = Math.max(0, d.amt - paid);
-        dr.push([side === 'owe' ? 'مطلوب مني' : 'طالب', d.person, d.reason, d.date, d.amt, paid, rem, rem <= 0 ? 'مسدّد' : paid > 0 ? 'جزئي' : 'معلق']);
-      });
-    });
-    var ws3 = XLSX.utils.aoa_to_sheet(dr);
-    ws3['!cols'] = [{ wch: 14 }, { wch: 16 }, { wch: 24 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 }];
-    XLSX.utils.book_append_sheet(wb, ws3, 'المديونيات');
-
-    XLSX.writeFile(wb, 'ميزانية_البيت_المحدثة.xlsx');
-  } catch (err) {
-    console.error("Excel Export Error:", err);
-    alert('حصل خطأ أثناء تصدير الإكسيل.');
-  }
-};
-
-/* ── IMPORT EXCEL ── */
-window.importExcel=function(event){ var file=event.target.files[0]; if(!file)return; var reader=new FileReader();
-reader.onload=function(e){ try{ var wb=XLSX.read(e.target.result,{type:'array'}); var imported=0; 
-wb.SheetNames.forEach(function(sn){ 
-  if(sn === 'المدخرات') {
-     var sRows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:''});
-     sRows.forEach(function(row){
-        var r0=String(row[0]||'').trim(), r1=String(row[1]||'').trim(), r2=String(row[2]||'').trim();
-        if(!r0 || r0.includes('المدخرات المركزية') || r0==='البند') return;
-        var a=parseFloat(r2)||0;
-        if(a>0) {
-           var ext = localData.savings.find(s => s.name === r0);
-           if(ext) { ext.amt = Math.max(ext.amt, a); } 
-           else { localData.savings.push({id:generateId(), name:r0, date:r1||todayStr(), amt:a, withdrawals:[]}); }
-        }
-     });
-     imported++;
-     return;
-  }
-
-  var mi=MN.findIndex(function(m){ return sn.startsWith(m); }); if(mi===-1)return; 
-  var ym=sn.match(/(\d{4})/); if(!ym)return; var y=parseInt(ym[1]),m=mi; var d=getMonthData(y,m); 
-  
-  var newInc = [], newExp = [];
-  var hasInc = false, hasExp = false;
-
-  var rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:''}); var sec=''; 
-  rows.forEach(function(row){ 
-    var r0=String(row[0]||'').trim(),r1=String(row[1]||'').trim(),r2=String(row[2]||'').trim(); 
-    if(r0.includes('المدخول')&&r0.includes('──')){sec='income'; hasInc=true; return;} 
-    if(r0.includes('المصاريف')&&r0.includes('──')){sec='expense'; hasExp=true; return;} 
-    if(!r0||r0.includes('إجمالي')||r0==='البند'||r0==='المتبقي'||r0==='المدخول'||r0==='المصاريف')return; 
-    
-    if(sec==='income'){ var a=parseFloat(r1)||0; if(a>0)newInc.push({id:generateId(),name:r0,amt:a}); } 
-    else if(sec==='expense'){ var a2=parseFloat(r2)||0; if(a2>0)newExp.push({id:generateId(),name:r0,cat:r1||'أخرى',amt:a2}); } 
-    else if(sec==='savings' || (r0.includes('المدخرات')&&r0.includes('──'))){
-       if(sec!=='savings') sec='savings';
-       else { 
-           var sa=parseFloat(r1)||0; 
-           if(sa>0) {
-               var ext = localData.savings.find(s => s.name === r0);
-               if(ext) { ext.amt = Math.max(ext.amt, sa); }
-               else { localData.savings.push({id:generateId(), name:r0, date:todayStr(), amt:sa, withdrawals:[]}); }
-           }
-       }
-    }
-  }); 
-
-  if(hasInc) d.income = newInc;
-  if(hasExp) d.expense = newExp;
-
-  imported++; 
-}); 
-event.target.value=''; saveToCloud(); 
-refreshAllScreens();
-alert(imported>0?'✓ تم استيراد البيانات بنجاح!':'ما لقيت بيانات.'); }catch(err){ alert('حصل خطأ أثناء الاستيراد.'); } }; 
-reader.readAsArrayBuffer(file); };
-
-/* ── AUTOCOMPLETE CACHE ── */
-var acCache = {};
-var CACHE_DURATION = 5000;
-function getCachedACHistory(type){
-  var now = Date.now();
-  if(acCache[type] && (now - acCache[type].timestamp < CACHE_DURATION)){ return acCache[type].data; }
-  var data = getACHistoryUncached(type);
-  acCache[type] = { data: data, timestamp: now };
-  return data;
-}
-
-function getACHistoryUncached(type){
-  var all=localData.budget; var items=new Set();
-  if(type==='income'){ Object.values(all).forEach(function(yr){ Object.values(yr).forEach(function(m){ (m.income||[]).forEach(function(i){ if(i.name)items.add(i.name); }); }); }); }
-  else if(type==='expense'){ Object.values(all).forEach(function(yr){ Object.values(yr).forEach(function(m){ (m.expense||[]).forEach(function(i){ if(i.name)items.add(i.name); }); }); }); }
-  else if(type==='savings'){ localData.savings.forEach(function(i){ if(i.name)items.add(i.name); }); }
-  else if(type==='debt-person'){ ['owe','owed'].forEach(function(s){ localData.debt[s].forEach(function(d){ if(d.person)items.add(d.person); }); }); }
-  else if(type==='debt-reason'){ ['owe','owed'].forEach(function(s){ localData.debt[s].forEach(function(d){ if(d.reason)items.add(d.reason); }); }); }
-  return Array.from(items);
-}
-
-/* ── AUTOCOMPLETE ── */
-var acList=null;
-function closeAC(){ if(acList){ acList.classList.remove('open'); acList.innerHTML=''; } }
-
-function positionAC(input){
-  var rect=input.getBoundingClientRect();
-  acList.style.right='auto';
-  acList.style.left=rect.left+'px';
-  acList.style.width=Math.max(rect.width, 220)+'px';
-  var spaceBelow=window.innerHeight-rect.bottom;
-  if(spaceBelow>200){ acList.style.top=(rect.bottom+2)+'px'; acList.style.bottom='auto';
-  } else { acList.style.bottom=(window.innerHeight-rect.top+2)+'px'; acList.style.top='auto'; }
-}
-
-function setupAutocomplete(){
-  if(!acList){
-    acList=document.createElement('div');
-    acList.className='autocomplete-list';
-    acList.id='global-ac-list';
-    document.body.appendChild(acList);
-  }
-  document.querySelectorAll('.ac-input').forEach(function(input){
-    if(input._acSetup) return;
-    input._acSetup=true;
-    var type=input.getAttribute('data-ac');
-
-    input.addEventListener('input',function(){
-      var val=input.value.trim().toLowerCase();
-      acList.innerHTML='';
-      if(!val||val.length<1){ closeAC(); return; }
-      var history=getCachedACHistory(type);
-      var matches=history.filter(function(h){ return h.toLowerCase().includes(val)&&h.toLowerCase()!==val; });
-      if(matches.length===0){ closeAC(); return; }
-      matches.slice(0,7).forEach(function(m){
-        var item=document.createElement('div');
-        item.className='autocomplete-item';
-        var idx=m.toLowerCase().indexOf(val);
-        item.innerHTML=escH(m.substring(0,idx))+'<b>'+escH(m.substring(idx,idx+val.length))+'</b>'+escH(m.substring(idx+val.length));
-        function pick(e){ e.preventDefault(); e.stopPropagation(); input.value=m; closeAC(); input.focus(); }
-        item.addEventListener('mousedown',pick);
-        item.addEventListener('touchend',pick);
-        acList.appendChild(item);
-      });
-      positionAC(input);
-      acList.classList.add('open');
-    });
-
-    input.addEventListener('focus',function(){ if(input.value.trim()) input.dispatchEvent(new Event('input')); });
-    input.addEventListener('blur',function(){ setTimeout(closeAC, 200); });
-    input.addEventListener('keydown',function(e){ if(e.key==='Escape') closeAC(); });
-  });
-
-  window.addEventListener('scroll',closeAC,true);
-  window.addEventListener('resize',closeAC);
-}
 
 /* ── INIT ── */
 wireSearch('search-exp', renderMonth);
@@ -1567,7 +1312,6 @@ if ('serviceWorker' in navigator) {
     .then((reg) => console.log('تم تشغيل المشغل بنجاح!'))
     .catch((err) => console.log('خطأ في تشغيل المشغل', err));
 }
-
 </script>
 </body>
 </html>
