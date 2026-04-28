@@ -817,9 +817,30 @@ function refreshAllScreens() {
   if(document.getElementById('page-savings').classList.contains('active')) renderSavings();
 }
 
-/* ── SORT ── */
-window.cycleSort=function(type){ sortState[type]=(sortState[type]+1)%4; var s=sortState[type]; var btn=document.getElementById('sort-'+type); if(btn){ btn.textContent=SORT_LABELS[s]; btn.classList.toggle('active',s!==0); } if(type==='savings') renderSavings(); else renderMonth(); };
-window.cycleDebtSort=function(side){ sortDebtState[side]=(sortDebtState[side]+1)%4; var s=sortDebtState[side]; var btn=document.getElementById('sort-'+side); if(btn){ btn.textContent=SORT_DEBT_LABELS[s]; btn.classList.toggle('active',s!==0); } renderDebt(); };
+/* ── الترتيب المصلح والشغال 100% ── */
+window.cycleSort = function(type) {
+  const SL = ['ترتيب ↕', 'تنازلي ↓', 'تصاعدي ↑', 'حسب القسم'];
+  sortState[type] = (sortState[type] + 1) % (type === 'expense' ? 4 : 3); 
+  var s = sortState[type];
+  var btn = document.getElementById('sort-' + type);
+  if (btn) {
+    btn.textContent = SL[s];
+    btn.classList.toggle('active', s !== 0);
+  }
+  if (type === 'savings') renderSavings(); else renderMonth();
+};
+
+window.cycleDebtSort = function(side) {
+  const SLD = ['ترتيب ↕', 'تنازلي ↓', 'تصاعدي ↑', 'حسب الاسم'];
+  sortDebtState[side] = (sortDebtState[side] + 1) % 4;
+  var s = sortDebtState[side];
+  var btn = document.getElementById('sort-' + side);
+  if (btn) {
+    btn.textContent = SLD[s];
+    btn.classList.toggle('active', s !== 0);
+  }
+  renderDebt();
+};
 
 function applySort(arr,type){
   var s=sortState[type]; var a=arr.slice();
@@ -1162,6 +1183,87 @@ function renderOverview(){
   if(rows.length===0){ om.innerHTML='<div class="empty">لا توجد بيانات بعد</div>'; return; }
   om.innerHTML=rows.slice().reverse().map(function(r){ var bw=r.inc>0?Math.min(100,Math.round((r.exp/r.inc)*100)):0; var col=r.left>=0?'var(--blue)':'var(--red)'; return '<div style="padding:11px 15px;border-bottom:0.5px solid var(--border);"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-size:13px;font-weight:500;">'+MN[r.m]+' '+r.y+'</span><span style="font-size:12px;color:'+col+';font-weight:500;">متبقي: '+fmt(r.left)+'</span></div><div style="display:flex;gap:14px;font-size:12px;color:var(--text2);margin-bottom:7px;"><span>دخل: <b style="color:var(--green)">'+fmt(r.inc)+'</b></span><span>مصاريف: <b style="color:var(--red)">'+fmt(r.exp)+'</b></span></div><div class="prog-bar"><div class="prog-fill" style="width:'+bw+'%;background:'+(r.left>=0?'#378ADD':'#D85A30')+'"></div></div></div>'; }).join('');
 }
+
+/* ── EXPORT EXCEL ── */
+window.exportExcel = function() {
+  try {
+    var all = localData.budget;
+    var dbData = localData.debt;
+    var wb = XLSX.utils.book_new();
+
+    // 1. أوراق الأشهر
+    Object.keys(all).sort().forEach(function(y) {
+      [0,1,2,3,4,5,6,7,8,9,10,11].forEach(function(m) {
+        if (!all[y] || !all[y][m]) return;
+        var d = all[y][m];
+        var tI = d.income.reduce(function(s, i) { return s + i.amt; }, 0);
+        var tE = d.expense.reduce(function(s, i) { return s + i.amt; }, 0);
+        if (tI === 0 && tE === 0) return;
+
+        var rows = [['ميزانية ' + MN[m] + ' ' + y], []];
+        rows.push(['── المدخول ──'], ['البند', 'المبلغ (د.ك)']);
+        d.income.forEach(function(i) { rows.push([i.name, i.amt]); });
+        rows.push(['إجمالي المدخول', tI], []);
+
+        rows.push(['── المصاريف ──'], ['البند', 'الفئة', 'المبلغ (د.ك)']);
+        d.expense.forEach(function(i) { rows.push([i.name, i.cat, i.amt]); });
+        rows.push(['إجمالي المصاريف', '', tE], []);
+
+        rows.push([], ['المدخول', tI], ['المصاريف', tE], ['المتبقي', tI - tE]);
+        var ws = XLSX.utils.aoa_to_sheet(rows);
+        ws['!cols'] = [{ wch: 28 }, { wch: 16 }, { wch: 16 }];
+        XLSX.utils.book_append_sheet(wb, ws, (MN[m] + ' ' + y).substring(0, 31));
+      });
+    });
+
+    // 2. ورقة الإجمالي العام
+    var sr = [['ملخص جميع الأشهر'], [], ['الشهر', 'المدخول', 'المصاريف', 'المتبقي']];
+    var gI = 0, gE = 0;
+    Object.keys(all).sort().forEach(function(y) {
+      [0,1,2,3,4,5,6,7,8,9,10,11].forEach(function(m) {
+        if (!all[y] || !all[y][m]) return;
+        var d = all[y][m];
+        var tI = d.income.reduce(function(s, i) { return s + i.amt; }, 0);
+        var tE = d.expense.reduce(function(s, i) { return s + i.amt; }, 0);
+        if (tI === 0 && tE === 0) return;
+        gI += tI; gE += tE;
+        sr.push([MN[m] + ' ' + y, tI, tE, tI - tE]);
+      });
+    });
+    sr.push([], ['الإجمالي', gI, gE, gI - gE]);
+    var ws2 = XLSX.utils.aoa_to_sheet(sr);
+    ws2['!cols'] = [{ wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(wb, ws2, 'الإجمالي');
+
+    // 3. ورقة المدخرات
+    var savRows = [['المدخرات المركزية'], [], ['البند', 'تاريخ الإضافة', 'المبلغ الأساسي', 'المسحوب', 'الصافي الحالي']];
+    (localData.savings || []).forEach(function(s) {
+      var wTot = (s.withdrawals || []).reduce(function(acc, w) { return acc + w.amt; }, 0);
+      savRows.push([s.name, s.date || '', s.amt, wTot, Math.max(0, s.amt - wTot)]);
+    });
+    var wsSav = XLSX.utils.aoa_to_sheet(savRows);
+    wsSav['!cols'] = [{ wch: 24 }, { wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(wb, wsSav, 'المدخرات');
+
+    // 4. ورقة المديونيات
+    var dr = [['المديونيات'], [], ['النوع', 'الشخص', 'السبب', 'التاريخ', 'المبلغ', 'المدفوع', 'المتبقي', 'الحالة']];
+    ['owe', 'owed'].forEach(function(side) {
+      (dbData[side] || []).forEach(function(d) {
+        var paid = (d.payments || []).reduce(function(s, p) { return s + p.amt; }, 0);
+        var rem = Math.max(0, d.amt - paid);
+        dr.push([side === 'owe' ? 'مطلوب مني' : 'طالب', d.person, d.reason, d.date, d.amt, paid, rem, rem <= 0 ? 'مسدّد' : paid > 0 ? 'جزئي' : 'معلق']);
+      });
+    });
+    var ws3 = XLSX.utils.aoa_to_sheet(dr);
+    ws3['!cols'] = [{ wch: 14 }, { wch: 16 }, { wch: 24 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 }];
+    XLSX.utils.book_append_sheet(wb, ws3, 'المديونيات');
+
+    XLSX.writeFile(wb, 'ميزانية_البيت_المحدثة.xlsx');
+  } catch (err) {
+    console.error("Excel Export Error:", err);
+    alert('حصل خطأ أثناء تصدير الإكسيل.');
+  }
+};
 
 /* ── IMPORT EXCEL ── */
 window.importExcel=function(event){ var file=event.target.files[0]; if(!file)return; var reader=new FileReader();
