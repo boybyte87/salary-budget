@@ -1318,21 +1318,6 @@ function setupAutocomplete(){
   window.addEventListener('scroll',closeAC,true);
   window.addEventListener('resize',closeAC);
 }
-
-/* ── INIT ── */
-wireSearch('search-exp', renderMonth);
-wireSearch('search-sav', renderSavings);
-wireSearch('search-owe', renderDebt);
-wireSearch('search-owed', renderDebt);
-updateLabel();
-initData();
-setTimeout(setupAutocomplete, 500);
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js')
-    .then((reg) => console.log('تم تشغيل المشغل بنجاح!'))
-    .catch((err) => console.log('خطأ في تشغيل المشغل', err));
-}
 /* ── EXPORT EXCEL ── */
 window.exportExcel = function() {
   try {
@@ -1563,6 +1548,7 @@ if ('serviceWorker' in navigator) {
     .then((reg) => console.log('تم تشغيل المشغل بنجاح!'))
     .catch((err) => console.log('خطأ في تشغيل المشغل', err));
 }
+
 </script>
 </body>
 </html>
