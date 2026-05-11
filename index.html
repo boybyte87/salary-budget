@@ -455,7 +455,107 @@ body{
   .net-amount{font-size:20px;}
   .daily-amount{font-size:19px;}
 }
+/* ===== FAB SHORTCUTS ===== */
+.fab-shortcuts-title{
+  font-size:11px;color:var(--text2);margin-bottom:8px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.fab-shortcuts-title button{
+  font-size:11px;color:var(--dash-accent);background:none;border:none;
+  cursor:pointer;font-family:var(--font);padding:0;
+}
+.fab-shortcuts-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;
+}
+.fab-shortcut-btn{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 6px;border-radius:12px;
+  border:0.5px solid var(--border2);background:var(--surface2);
+  cursor:pointer;font-family:var(--font);transition:all .15s;
+  position:relative;
+}
+.fab-shortcut-btn:hover{background:var(--dash-accent-bg);border-color:var(--dash-accent);}
+.fab-shortcut-btn:active{transform:scale(0.95);}
+.fab-shortcut-icon{font-size:22px;line-height:1;}
+.fab-shortcut-name{font-size:11px;color:var(--text);font-weight:500;text-align:center;}
+.fab-shortcut-amt{font-size:10px;color:var(--text2);}
 
+/* نافذة تأكيد الاختصار */
+.shortcut-confirm-sheet{
+  position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);
+  display:none;align-items:flex-end;justify-content:center;
+}
+.shortcut-confirm-sheet.open{display:flex;animation:fadeIn .2s;}
+.shortcut-confirm-inner{
+  background:var(--surface);width:100%;max-width:420px;
+  border-radius:20px 20px 0 0;padding:20px 18px 28px;
+  animation:slideUp .25s cubic-bezier(.4,0,.2,1);
+}
+.shortcut-confirm-icon{font-size:36px;text-align:center;margin-bottom:6px;}
+.shortcut-confirm-name{font-size:16px;font-weight:600;text-align:center;margin-bottom:16px;}
+.shortcut-amt-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.shortcut-amt-input{
+  flex:1;font-size:22px;font-weight:600;padding:12px;text-align:center;
+  border:0.5px solid var(--border2);border-radius:12px;
+  background:var(--surface2);color:var(--text);font-family:var(--font);
+  direction:ltr;font-feature-settings:"tnum";
+}
+.shortcut-amt-input:focus{outline:none;border-color:var(--dash-accent);}
+.shortcut-unit{font-size:13px;color:var(--text2);white-space:nowrap;}
+.shortcut-confirm-btn{
+  width:100%;padding:14px;font-size:15px;font-weight:600;
+  border:none;border-radius:12px;background:var(--dash-accent);color:#fff;
+  cursor:pointer;font-family:var(--font);margin-bottom:8px;
+}
+.shortcut-cancel-btn{
+  width:100%;padding:10px;font-size:13px;
+  border:0.5px solid var(--border2);border-radius:12px;
+  background:transparent;color:var(--text);cursor:pointer;font-family:var(--font);
+}
+
+/* نافذة تعديل الاختصارات */
+.shortcut-edit-sheet{
+  position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,0.5);
+  display:none;align-items:flex-end;justify-content:center;
+}
+.shortcut-edit-sheet.open{display:flex;animation:fadeIn .2s;}
+.shortcut-edit-inner{
+  background:var(--surface);width:100%;max-width:480px;
+  border-radius:20px 20px 0 0;padding:20px 18px 28px;
+  animation:slideUp .25s cubic-bezier(.4,0,.2,1);
+  max-height:85vh;overflow-y:auto;
+}
+.shortcut-edit-title{font-size:15px;font-weight:600;margin-bottom:16px;text-align:center;}
+.shortcut-edit-row{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 0;border-bottom:0.5px solid var(--border);
+}
+.shortcut-edit-row:last-of-type{border-bottom:none;}
+.shortcut-edit-emoji{
+  font-size:24px;width:40px;text-align:center;cursor:pointer;
+  border:0.5px solid var(--border2);border-radius:8px;padding:4px;
+  background:var(--surface2);
+}
+.shortcut-edit-name{
+  flex:1;font-size:13px;padding:7px 10px;
+  border:0.5px solid var(--border2);border-radius:8px;
+  background:var(--surface2);color:var(--text);font-family:var(--font);direction:rtl;
+}
+.shortcut-edit-amt{
+  width:80px;font-size:13px;padding:7px 8px;text-align:center;
+  border:0.5px solid var(--border2);border-radius:8px;
+  background:var(--surface2);color:var(--text);font-family:var(--font);
+}
+.shortcut-edit-cat{
+  width:100px;font-size:12px;padding:7px 6px;
+  border:0.5px solid var(--border2);border-radius:8px;
+  background:var(--surface2);color:var(--text);font-family:var(--font);direction:rtl;
+}
+.shortcut-edit-save{
+  width:100%;margin-top:14px;padding:12px;font-size:14px;font-weight:600;
+  border:none;border-radius:12px;background:var(--dash-accent);color:#fff;
+  cursor:pointer;font-family:var(--font);
+}
 /* زر الواتساب أسفل الصفحة */
 .wa-bottom-btn {
   width:100%;
@@ -872,7 +972,38 @@ body{
 <div class="fab-sheet" id="fab-sheet" onclick="closeQuickAddOnBg(event)">
   <div class="fab-sheet-inner" onclick="event.stopPropagation()">
     <div class="fab-sheet-grip"></div>
-    <div class="fab-sheet-title">إضافة سريع</div>
+<div class="fab-sheet-title">إضافة سريع</div>
+
+<!-- SHORTCUTS GRID -->
+<div class="fab-shortcuts-title">
+  <span>اختصارات سريعة</span>
+  <button onclick="openShortcutEdit()">✏️ تعديل</button>
+</div>
+<div class="fab-shortcuts-grid" id="fab-shortcuts-grid"></div>
+
+<!-- نافذة تأكيد الاختصار -->
+<div class="shortcut-confirm-sheet" id="shortcut-confirm-sheet">
+  <div class="shortcut-confirm-inner">
+    <div class="shortcut-confirm-icon" id="sc-icon"></div>
+    <div class="shortcut-confirm-name" id="sc-name"></div>
+    <div class="shortcut-amt-row">
+      <input type="number" class="shortcut-amt-input" id="sc-amt" min="0" step="0.1"/>
+      <span class="shortcut-unit">د.ك</span>
+    </div>
+    <button class="shortcut-confirm-btn" onclick="confirmShortcut()">✓ إضافة كمصروف</button>
+    <button class="shortcut-cancel-btn" onclick="closeShortcutConfirm()">إلغاء</button>
+  </div>
+</div>
+
+<!-- نافذة تعديل الاختصارات -->
+<div class="shortcut-edit-sheet" id="shortcut-edit-sheet">
+  <div class="shortcut-edit-inner">
+    <div class="shortcut-edit-title">✏️ تعديل الاختصارات</div>
+    <div id="shortcut-edit-rows"></div>
+    <button class="shortcut-edit-save" onclick="saveShortcutEdits()">حفظ ✓</button>
+    <button class="shortcut-cancel-btn" style="margin-top:8px" onclick="closeShortcutEdit()">إلغاء</button>
+  </div>
+</div>
     <div class="fab-tabs">
       <button class="fab-tab active" id="qa-tab-exp" onclick="qaSwitch('exp')">🔴 مصروف</button>
       <button class="fab-tab" id="qa-tab-inc" onclick="qaSwitch('inc')">🟢 دخل</button>
@@ -2130,6 +2261,7 @@ function renderHome(){
 /* ===== Quick Add FAB ===== */
 window.openQuickAdd = function(){
   document.getElementById('fab-sheet').classList.add('open');
+  renderShortcutsGrid();
   setTimeout(function(){ document.getElementById('qa-exp-name').focus(); }, 100);
 };
 window.closeQuickAdd = function(){
@@ -2169,9 +2301,117 @@ window.quickAddSubmit = function(which){
   refreshAllScreens();
   closeQuickAdd();
 };
+/* ===== FAB SHORTCUTS SYSTEM ===== */
 
+const DEFAULT_SHORTCUTS = [
+  { icon:'⛽', name:'بنزين',  amt:5,  cat:'تنقل' },
+  { icon:'☕', name:'قهوة',   amt:2,  cat:'أكل وشرب' },
+  { icon:'🛒', name:'بقالة',  amt:10, cat:'أكل وشرب' },
+  { icon:'🍔', name:'أكل برة', amt:4, cat:'أكل وشرب' },
+];
+
+function loadShortcuts() {
+  try {
+    var saved = localStorage.getItem('fab-shortcuts');
+    return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS));
+  } catch(e) {
+    return JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS));
+  }
+}
+
+function saveShortcuts(arr) {
+  localStorage.setItem('fab-shortcuts', JSON.stringify(arr));
+}
+
+function renderShortcutsGrid() {
+  var grid = document.getElementById('fab-shortcuts-grid');
+  if(!grid) return;
+  var shortcuts = loadShortcuts();
+  grid.innerHTML = shortcuts.map(function(s, i) {
+    return '<button class="fab-shortcut-btn" onclick="openShortcutConfirm('+i+')">'
+      + '<span class="fab-shortcut-icon">'+s.icon+'</span>'
+      + '<span class="fab-shortcut-name">'+escH(s.name)+'</span>'
+      + '<span class="fab-shortcut-amt">'+s.amt+' د.ك</span>'
+      + '</button>';
+  }).join('');
+}
+
+var activeShortcutIndex = null;
+
+window.openShortcutConfirm = function(idx) {
+  var shortcuts = loadShortcuts();
+  var s = shortcuts[idx];
+  activeShortcutIndex = idx;
+  document.getElementById('sc-icon').textContent = s.icon;
+  document.getElementById('sc-name').textContent = s.name;
+  document.getElementById('sc-amt').value = s.amt;
+  document.getElementById('shortcut-confirm-sheet').classList.add('open');
+  setTimeout(function(){ document.getElementById('sc-amt').select(); }, 100);
+};
+
+window.closeShortcutConfirm = function() {
+  document.getElementById('shortcut-confirm-sheet').classList.remove('open');
+  activeShortcutIndex = null;
+};
+
+window.confirmShortcut = function() {
+  if(activeShortcutIndex === null) return;
+  var shortcuts = loadShortcuts();
+  var s = shortcuts[activeShortcutIndex];
+  var amt = parseFloat(document.getElementById('sc-amt').value);
+  if(isNaN(amt) || amt <= 0) { document.getElementById('sc-amt').focus(); return; }
+
+  // تعلّم المبلغ الجديد
+  shortcuts[activeShortcutIndex].amt = amt;
+  saveShortcuts(shortcuts);
+
+  // إضافة كمصروف
+  var d = getMonthData(CY, CM);
+  d.expense.push({ id: generateId(), name: s.name, cat: s.cat, amt: amt });
+  saveToCloud();
+  refreshAllScreens();
+  renderShortcutsGrid();
+  closeShortcutConfirm();
+  closeQuickAdd();
+};
+
+/* ── تعديل الاختصارات ── */
+window.openShortcutEdit = function() {
+  var shortcuts = loadShortcuts();
+  var rows = document.getElementById('shortcut-edit-rows');
+  rows.innerHTML = shortcuts.map(function(s, i) {
+    var catOpts = ['سكن','أكل وشرب','تنقل','تعليم','صحة','ترفيه','اشتراكات','تسوق','مصاريف متنوعة','أخرى']
+      .map(function(c){ return '<option'+(c===s.cat?' selected':'')+'>'+c+'</option>'; }).join('');
+    return '<div class="shortcut-edit-row">'
+      + '<input class="shortcut-edit-emoji" id="se-icon-'+i+'" value="'+s.icon+'" maxlength="2" style="font-size:20px;text-align:center;width:44px;"/>'
+      + '<input class="shortcut-edit-name" id="se-name-'+i+'" value="'+escH(s.name)+'" placeholder="الاسم"/>'
+      + '<input class="shortcut-edit-amt"  id="se-amt-'+i+'"  value="'+s.amt+'" type="number" min="0" placeholder="مبلغ"/>'
+      + '<select class="shortcut-edit-cat" id="se-cat-'+i+'">'+catOpts+'</select>'
+      + '</div>';
+  }).join('');
+  document.getElementById('shortcut-edit-sheet').classList.add('open');
+};
+
+window.closeShortcutEdit = function() {
+  document.getElementById('shortcut-edit-sheet').classList.remove('open');
+};
+
+window.saveShortcutEdits = function() {
+  var shortcuts = loadShortcuts();
+  shortcuts.forEach(function(s, i) {
+    var icon = (document.getElementById('se-icon-'+i).value || s.icon).trim();
+    var name = (document.getElementById('se-name-'+i).value || s.name).trim();
+    var amt  = parseFloat(document.getElementById('se-amt-'+i).value) || s.amt;
+    var cat  = document.getElementById('se-cat-'+i).value || s.cat;
+    shortcuts[i] = { icon, name, amt, cat };
+  });
+  saveShortcuts(shortcuts);
+  renderShortcutsGrid();
+  closeShortcutEdit();
+};
 // تهيئة الداش بورد عند التحميل
 applyDashAccent(getDashAccent());
+renderShortcutsGrid();
 // إظهار FAB لأن الصفحة الافتراضية = الداش
 setTimeout(function(){
   var fab=document.getElementById('fab-btn');
