@@ -328,8 +328,8 @@ body{
 
 /* NET WORTH */
 .net-card{
-  background:linear-gradient(135deg,var(--dash-accent-bg),transparent);
-  border:0.5px solid var(--dash-accent);
+  background:var(--surface);
+  border:0.5px solid var(--border);
   border-radius:14px;
   padding:14px 16px;
   margin-bottom:14px;
@@ -632,8 +632,10 @@ body{
             <div class="user-dropdown-email" id="user-email"></div>
             <button class="menu-btn" onclick="togglePrivacy()">👁️ إخفاء / إظهار الأرقام</button>
             <button class="menu-btn" onclick="document.getElementById('bg-upload').click()">🖼️ تغيير الخلفية</button>
-            <button class="menu-btn" onclick="exportJSON()">💾 تنزيل نسخة احتياطية</button>
-            <button class="menu-btn" onclick="document.getElementById('json-import').click()">📂 استرجاع نسخة سابقة</button>
+           <button class="menu-btn" onclick="exportExcel()">📊 تصدير Excel</button>
+          <button class="menu-btn" onclick="document.getElementById('xl-import').click()">📥 استيراد Excel</button>
+          <button class="menu-btn" onclick="exportJSON()">💾 تنزيل نسخة احتياطية</button>
+          <button class="menu-btn" onclick="document.getElementById('json-import').click()">📂 استرجاع نسخة سابقة</button>
             <div class="theme-section">
               <div class="theme-label">لون التطبيق</div>
               <div class="theme-swatches">
@@ -668,11 +670,8 @@ body{
       <button class="main-tab" id="tab-overview" onclick="switchMain('overview')">الإجمالي</button>
     </div>
     <div class="btns-right">
-      <button class="top-btn" onclick="exportExcel()">⬇ Excel</button>
-      <button class="top-btn import" onclick="document.getElementById('xl-import').click()">⬆ استيراد</button>
-      <input type="file" id="xl-import" accept=".xlsx" style="display:none" onchange="importExcel(event)"/>
-    </div>
-  </div>
+  <input type="file" id="xl-import" accept=".xlsx" style="display:none" onchange="importExcel(event)"/>
+</div>
 
   <div class="page active dash-wrap" id="page-home">
     <div class="dash-greet" id="dash-greet">أهلاً 👋</div>
