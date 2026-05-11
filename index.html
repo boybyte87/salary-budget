@@ -194,6 +194,38 @@ body{
 .autocomplete-item b{color:var(--accent);font-weight:600;}
 @media(max-width:480px){.card-val{font-size:14px;}.page{padding:11px;}.main-tab{padding:9px 10px;font-size:12px;}}
 
+  /* ===== TOP 5 EXPENSES ===== */
+.top5-card{
+  background:var(--surface);
+  border:0.5px solid var(--border);
+  border-radius:14px;
+  padding:14px 16px;
+  margin-bottom:14px;
+}
+.top5-row{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 0;cursor:pointer;
+  border-bottom:0.5px solid var(--border);
+  transition:background .1s;border-radius:8px;
+}
+.top5-row:last-child{border-bottom:none;}
+.top5-row:hover{background:var(--surface2);}
+.top5-rank{
+  width:24px;height:24px;border-radius:7px;
+  background:var(--surface2);color:var(--text2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;flex-shrink:0;
+}
+.top5-rank.r1{background:#FFD700;color:#7A6000;}
+.top5-rank.r2{background:#C0C0C0;color:#505050;}
+.top5-rank.r3{background:#CD7F32;color:#5A3010;}
+.top5-info{flex:1;min-width:0;}
+.top5-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.top5-cat{font-size:10.5px;color:var(--text2);margin-top:1px;}
+.top5-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;}
+.top5-amt{font-size:13px;font-weight:600;color:var(--red);}
+.top5-pct{font-size:10px;color:var(--text2);}
+  
 /* ===== الداش بورد ===== */
 :root{
   --dash-accent:#185FA5;
@@ -741,7 +773,16 @@ body{
     <div class="cat-card" id="top-cats">
       <div class="empty" style="padding:8px 0;">لا توجد مصاريف بعد</div>
     </div>
-
+    
+<!-- TOP 5 EXPENSES -->
+<div class="dash-sec-title">
+  <span>أكبر 5 مصاريف</span>
+  <button class="sec-act" onclick="switchMain('month')">عرض الكل ←</button>
+</div>
+<div class="top5-card" id="top5-expenses">
+  <div class="empty">لا توجد مصاريف بعد</div>
+</div>
+    
     <!-- COMPARISON -->
     <div class="dash-sec-title"><span>مقارنة مع آخر الأشهر</span></div>
     <div class="compare-card">
@@ -2180,6 +2221,32 @@ function renderHome(){
       return '<div class="alert-card '+a.type+'"><span class="alert-icon">'+a.icon+'</span><span>'+escH(a.text)+'</span></div>';
     }).join('');
 
+// TOP 5 EXPENSES
+  var top5El = document.getElementById('top5-expenses');
+  if(top5El) {
+    var expenses = (d.expense||[]).slice().sort(function(a,b){ return b.amt - a.amt; }).slice(0,5);
+    var totalExp = (d.expense||[]).reduce(function(s,i){ return s+i.amt; }, 0);
+    if(expenses.length === 0) {
+      top5El.innerHTML = '<div class="empty">لا توجد مصاريف بعد</div>';
+    } else {
+      top5El.innerHTML = expenses.map(function(item, idx) {
+        var pct = totalExp > 0 ? Math.round((item.amt/totalExp)*100) : 0;
+        var rankClass = idx===0?'r1':idx===1?'r2':idx===2?'r3':'';
+        return '<div class="top5-row" onclick="switchMain(\'month\')">'
+          + '<div class="top5-rank '+rankClass+'">'+(idx+1)+'</div>'
+          + '<div class="top5-info">'
+          +   '<div class="top5-name">'+escH(item.name)+'</div>'
+          +   '<div class="top5-cat">'+escH(item.cat||'')+'</div>'
+          + '</div>'
+          + '<div class="top5-right">'
+          +   '<div class="top5-amt">'+fmt(item.amt)+'</div>'
+          +   '<div class="top5-pct">'+pct+'% من المصاريف</div>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+    }
+  }
+  
   // TOP CATEGORIES
   var top = topCategories(d.expense||[], 4);
   var topEl = document.getElementById('top-cats');
