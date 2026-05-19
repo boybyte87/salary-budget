@@ -936,7 +936,7 @@ body{
         <div id="m-exp-list"></div>
         <div class="add-row">
           <input type="text" id="exp-name" placeholder="مثال: إيجار، نتفليكس..." class="ac-input" data-ac="expense" autocomplete="off"/>
-          <select id="exp-cat"><option>سكن</option><option>أكل وشرب</option><option>تنقل</option><option>تعليم</option><option>صحة</option><option>ترفيه</option><option>اشتراكات</option><option>تسوق</option><option>مصاريف متنوعة</option><option>أخرى</option></select>
+          <select id="exp-cat"><option>سكن</option><option>أكل وشرب</option><option>تنقل</option><option>تعليم</option><option>صحة</option><option>ترفيه</option><option>اشتراكات</option><option>تسوق</option><option>مشتريات للبيت</option><option>مصاريف متنوعة</option><option>أخرى</option></select>
           <input type="number" id="exp-amt" placeholder="المبلغ" style="max-width:110px" min="0"/>
           <button class="add-btn" onclick="addExpense()">+ إضافة</button>
         </div>
@@ -1183,8 +1183,8 @@ const provider=new GoogleAuthProvider();
 provider.setCustomParameters({prompt:'select_account'});
 
 const MN=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const CC={'سكن':'#378ADD','أكل وشرب':'#1D9E75','تنقل':'#D85A30','تعليم':'#7F77DD','صحة':'#BA7517','ترفيه':'#D4537E','اشتراكات':'#0F6E56','تسوق':'#993C1D','مصاريف متنوعة':'#5F5E5A','أخرى':'#888780'};
-const CATS=['سكن','أكل وشرب','تنقل','تعليم','صحة','ترفيه','اشتراكات','تسوق','مصاريف متنوعة','أخرى'];
+const CC={'سكن':'#378ADD','أكل وشرب':'#1D9E75','تنقل':'#D85A30','تعليم':'#7F77DD','صحة':'#BA7517','ترفيه':'#D4537E','اشتراكات':'#0F6E56','تسوق':'#993C1D','مشتريات للبيت':'#8E44AD','مصاريف متنوعة':'#5F5E5A','أخرى':'#888780'};
+const CATS=['سكن','أكل وشرب','تنقل','تعليم','صحة','ترفيه','اشتراكات','تسوق','مشتريات للبيت','مصاريف متنوعة','أخرى'];
 
 let CY=new Date().getFullYear(), CM=new Date().getMonth();
 let mChart=null, oChart=null;
