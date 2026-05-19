@@ -1705,10 +1705,68 @@ window.addPayment=function(side,debtId){ var ae=document.getElementById('pay-amt
 window.deletePayment=function(side,debtId,payId){ customConfirm('حذف هذه الدفعة؟',function(){ var debt=localData.debt[side].find(function(i){ return String(i.id)===String(debtId); }); if(debt)debt.payments=debt.payments.filter(function(p){ return String(p.id)!==String(payId); }); saveToCloud(); renderDebt(); }); };
 window.deleteDebt=function(side,id){ customConfirm('حذف هذا الدَين؟ لن يمكن التراجع.',function(){ localData.debt[side]=localData.debt[side].filter(function(i){ return String(i.id)!==String(id); }); saveToCloud(); renderDebt(); }); };
 
-/* ── RENDER BARS ── */
-function renderBars(elId,expenses){ var cats={}; expenses.forEach(function(i){ cats[i.cat]=(cats[i.cat]||0)+i.amt; });
-var total=Object.values(cats).reduce(function(s,v){ return s+v; },0); var el=document.getElementById(elId); if(total===0){ el.innerHTML='<div class="empty">لا توجد مصاريف</div>'; return;
-} el.innerHTML=Object.entries(cats).sort(function(a,b){ return b[1]-a[1]; }).map(function(e){ var pct=Math.round((e[1]/total)*100),col=CC[e[0]]||'#888780'; return '<div class="bar-row" onclick="openCatModal(\''+e[0]+'\',' + (elId==='o-bars' ? '\'overview\'' : '\'month\'') + ')" style="cursor:pointer;"><div class="bar-lbl">'+escH(e[0])+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+col+';">'+pct+'%</div></div><div class="bar-amt">'+fmt(e[1])+'</div></div>'; }).join('');
+/* ── RENDER BARS MIGRATED & UPDATED ── */
+function renderBars(elId,expenses){ 
+  var cats={}; 
+  expenses.forEach(function(i){ cats[i.cat]=(cats[i.cat]||0)+i.amt; });
+  var total=Object.values(cats).reduce(function(s,v){ return s+v; },0); 
+  var el=document.getElementById(elId);
+  if(!el) return;
+  
+  if(elId === 'o-bars') {
+    if(total===0){ el.innerHTML='<div class="empty">لا توجد مصاريف</div>'; return; }
+    el.innerHTML=Object.entries(cats).sort(function(a,b){ return b[1]-a[1]; }).map(function(e){ 
+      var pct=Math.round((e[1]/total)*100),col=CC[e[0]]||'#888780'; 
+      return '<div class="bar-row" onclick="openCatModal(\''+e[0]+'\',\'overview\')"><div class="bar-lbl">'+escH(e[0])+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+col+';">'+pct+'%</div></div><div class="bar-amt">'+fmt(e[1])+'</div></div>'; 
+    }).join('');
+  } else {
+    // بناء فصيلة "الشهر الحالي" لعرض كل الفئات مع ميزانياتها والتحكم الفردي برتابة
+    var d = getMonthData(CY, CM);
+    var cb = d.catBudgets || {};
+    
+    el.innerHTML = CATS.map(function(catName){
+      var spent = cats[catName] || 0;
+      var budget = cb[catName] !== undefined ? cb[catName] : null;
+      var pctStr = "";
+      var trackPct = 0;
+      var col = CC[catName] || '#888780';
+      var budgetInfoHtml = "";
+      
+      if(budget !== null) {
+        trackPct = budget > 0 ? Math.min(100, Math.round((spent/budget)*100)) : 0;
+        pctStr = trackPct + "%";
+        if(trackPct >= 100) col = 'var(--red)';
+        else if(trackPct >= 80) col = 'var(--amber)';
+        else col = 'var(--green)';
+        budgetInfoHtml = '<span style="font-size:11px;color:var(--text2);margin-right:auto;">الميزانية: <b>'+fmt(budget)+'</b></span>';
+      } else {
+        trackPct = total > 0 ? Math.round((spent/total)*100) : 0;
+        pctStr = trackPct + "%";
+        budgetInfoHtml = '<span style="font-size:11px;color:var(--text2);margin-right:auto;">من الإجمالي</span>';
+      }
+      
+      var catId = catName.replace(/\s/g, '_');
+      var hasBudgetCss = budget !== null ? 'font-weight:bold;color:'+col : '';
+      
+      return '<div class="bar-container" style="border-bottom:0.5px solid var(--border);padding:8px 0;">'
+        + '<div class="bar-row" onclick="openCatModal(\''+catName+'\',\'month\')" style="cursor:pointer;margin-bottom:4px;">'
+        +   '<div class="bar-lbl" style="'+hasBudgetCss+'">'+escH(catName)+'</div>'
+        +   '<div class="bar-track"><div class="bar-fill" style="width:'+trackPct+'%;background:'+col+';">'+pctStr+'</div></div>'
+        +   '<div class="bar-amt" style="display:flex;flex-direction:column;align-items:flex-end;"><span>'+fmt(spent)+'</span></div>'
+        +   '<button class="sort-btn" style="padding:2px 6px;margin-right:8px;font-size:10px;" onclick="event.stopPropagation();toggleCatBudgetForm(\''+catName+'\')">🎯 '+(budget!==null?'تعديل':'ضبط')+'</button>'
+        + '</div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px;">'
+        +   budgetInfoHtml
+        + '</div>'
+        + '<div id="cb-form-'+catId+'" style="display:none;gap:6px;padding:6px 4px;background:var(--surface2);margin-top:4px;border-radius:var(--r-md);align-items:center;">'
+        +   '<input type="number" id="cb-input-'+catId+'" placeholder="ميزانية '+catName+'" value="'+(budget||'')+'" style="font-size:12px;padding:4px 8px;width:100px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface);color:var(--text);"/>'
+        +   '<button class="save-btn" style="padding:4px 10px;font-size:11px;" onclick="saveCatBudget(\''+catName+'\')">حفظ</button>'
+        +   '<button class="cancel-edit-btn" style="padding:4px 10px;font-size:11px;" onclick="toggleCatBudgetForm(\''+catName+'\')">إلغاء</button>'
+        +   (budget!==null ? '<button class="del-btn" style="color:var(--red);font-size:11px;margin-right:auto;" onclick="deleteCatBudget(\''+catName+'\')">🗑️ حذف</button>' : '')
+        + '</div>'
+        + '</div>';
+    }).join('');
+  }
 }
 
 /* ── RENDER ITEMS ── */
@@ -2127,6 +2185,31 @@ window.clearMonthBudget = function(){
   renderHome();
 };
 
+window.toggleCatBudgetForm = function(cat) {
+  var form = document.getElementById('cb-form-' + cat.replace(/\s/g, '_'));
+  if(form) form.style.display = form.style.display === 'flex' ? 'none' : 'flex';
+};
+
+window.saveCatBudget = function(cat) {
+  var d = getMonthData(CY, CM);
+  if(!d.catBudgets) d.catBudgets = {};
+  var input = document.getElementById('cb-input-' + cat.replace(/\s/g, '_'));
+  var val = parseFloat(input.value);
+  if(isNaN(val) || val < 0) return;
+  d.catBudgets[cat] = val;
+  saveToCloud();
+  refreshAllScreens();
+};
+
+window.deleteCatBudget = function(cat) {
+  var d = getMonthData(CY, CM);
+  if(d.catBudgets && d.catBudgets[cat] !== undefined) {
+    delete d.catBudgets[cat];
+    saveToCloud();
+    refreshAllScreens();
+  }
+};
+  
 // أيام الشهر / الباقي
 function daysInCurrentBudgetMonth(){
   return new Date(CY, CM+1, 0).getDate();
@@ -2198,13 +2281,28 @@ function buildAlerts(ctx){
   if(ctx.left > 0 && ctx.inc>0 && (ctx.left/ctx.inc) >= 0.3){
     alerts.push({type:'good', icon:'🎉', text:'وفّرت '+Math.round(ctx.left/ctx.inc*100)+'% من دخلك — حركك ممتاز'});
   }
-  // 5) لا يوجد دخل مسجّل
+// 5) لا يوجد دخل مسجّل
   if(ctx.inc === 0 && ctx.exp > 0){
     alerts.push({type:'warn', icon:'💡', text:'ما سجلت دخل لهذا الشهر — أضفه عشان تطلع المؤشرات صح'});
   }
+
+  /* ── إضافة تفحص ميزانيات الفئات الفردية للداش بورد ── */
+  var dCurrent = getMonthData(CY, CM);
+  if(dCurrent.catBudgets) {
+    var catsSpent={}; 
+    (dCurrent.expense||[]).forEach(function(i){ catsSpent[i.cat]=(catsSpent[i.cat]||0)+i.amt; });
+    Object.keys(dCurrent.catBudgets).forEach(function(cat){
+      var sAmt = catsSpent[cat] || 0;
+      var bAmt = dCurrent.catBudgets[cat];
+      if(sAmt > bAmt) {
+        alerts.push({type:'bad', icon:'🚨', text:'تعديت ميزانية فئة "' + cat + '" بـ ' + kwdFormatter.format(sAmt - bAmt)});
+      }
+    });
+  }
+  
   return alerts;
 }
-
+  
 function renderHome(){
   if(!document.getElementById('page-home')) return;
 
@@ -2409,12 +2507,29 @@ function renderHome(){
   if(top.list.length===0){
     topEl.innerHTML = '<div class="empty" style="padding:8px 0;">لا توجد مصاريف بعد</div>';
   } else {
+    var cb = d.catBudgets || {};
     topEl.innerHTML = top.list.map(function(c,idx){
+      var budget = cb[c.name] !== undefined ? cb[c.name] : null;
+      var displayPct = c.pct; // النسبة الافتراضية من المصاريف
+      var col = 'var(--text)';
+      var extraInfo = "(صرفت " + numFormatter.format(c.amt) + " د.ك)";
+      
+      if(budget !== null) {
+        displayPct = budget > 0 ? Math.round((c.amt / budget) * 100) : 0;
+        var rem = budget - c.amt;
+        if(displayPct >= 100) col = 'var(--red)';
+        else if(displayPct >= 80) col = 'var(--amber)';
+        else col = 'var(--green)';
+        
+        extraInfo = "(صرفت " + numFormatter.format(c.amt) + " / متبقي " + numFormatter.format(rem) + " د.ك)";
+      }
+      
       return '<div class="cat-row" onclick="openCatModal(\''+escH(c.name)+'\',\'month\')" style="cursor:pointer;">'
         +'<div class="cat-rank'+(idx===0?' rank-1':'')+'">'+(idx+1)+'</div>'
-        +'<div class="cat-name">'+escH(c.name)+'</div>'
-        +'<div class="cat-pct">'+c.pct+'%</div>'
-        +'<div class="cat-amt">'+fmt(c.amt)+'</div>'
+        +'<div class="cat-name" style="color:'+col+'">'+escH(c.name)+'</div>'
+        +'<div class="cat-pct" style="color:'+col+';font-weight:bold;width:auto;margin-left:8px;">'+displayPct+'%</div>'
+        +'<div class="cat-info" style="font-size:10.5px;color:var(--text2);margin-right:4px;">'+extraInfo+'</div>'
+        +'<div class="cat-amt" style="margin-right:auto;font-feature-settings:\'tnum\'; font-weight:600;">'+fmt(c.amt)+'</div>'
         +'</div>';
     }).join('');
   }
