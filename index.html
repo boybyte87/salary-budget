@@ -623,6 +623,47 @@ body{
   border:none;border-radius:12px;background:var(--dash-accent);color:#fff;
   cursor:pointer;font-family:var(--font);
 }
+
+/* ===== CATEGORY DRILL DOWN ===== */
+.cat-modal-overlay{
+  position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.5);
+  display:none;align-items:flex-end;justify-content:center;
+}
+.cat-modal-overlay.open{display:flex;animation:fadeIn .2s;}
+.cat-modal-inner{
+  background:var(--surface);width:100%;max-width:520px;
+  border-radius:20px 20px 0 0;padding:20px 18px 28px;
+  animation:slideUp .25s cubic-bezier(.4,0,.2,1);
+  max-height:75vh;display:flex;flex-direction:column;
+}
+.cat-modal-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;flex-shrink:0;
+}
+.cat-modal-title{font-size:15px;font-weight:600;}
+.cat-modal-total{font-size:13px;color:var(--red);font-weight:600;}
+.cat-modal-close{
+  background:none;border:none;cursor:pointer;
+  font-size:18px;color:var(--text2);padding:4px;
+}
+.cat-modal-list{overflow-y:auto;flex:1;}
+.cat-modal-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 4px;border-bottom:0.5px solid var(--border);
+}
+.cat-modal-item:last-child{border-bottom:none;}
+.cat-modal-item-name{font-size:13px;color:var(--text);}
+.cat-modal-item-amt{font-size:13px;font-weight:600;color:var(--red);}
+
+/* للإجمالي — مجموعة بالشهر */
+.cat-modal-month-group{margin-bottom:10px;}
+.cat-modal-month-label{
+  font-size:11px;font-weight:600;color:var(--text2);
+  padding:6px 4px;border-bottom:0.5px solid var(--border);
+  display:flex;justify-content:space-between;
+}
+.cat-modal-month-label span{color:var(--text);}
+  
 /* زر الواتساب أسفل الصفحة */
 .wa-bottom-btn {
   width:100%;
@@ -1046,6 +1087,20 @@ body{
   </div>
 </div>
 
+<!-- CATEGORY DRILL DOWN MODAL -->
+<div class="cat-modal-overlay" id="cat-modal-overlay" onclick="closeCatModal(event)">
+  <div class="cat-modal-inner" onclick="event.stopPropagation()">
+    <div class="cat-modal-header">
+      <div>
+        <div class="cat-modal-title" id="cat-modal-title"></div>
+        <div class="cat-modal-total" id="cat-modal-total"></div>
+      </div>
+      <button class="cat-modal-close" onclick="closeCatModal()">✕</button>
+    </div>
+    <div class="cat-modal-list" id="cat-modal-list"></div>
+  </div>
+</div>
+  
 <!-- QUICK ADD FAB (الداش بورد فقط) -->
 <button class="fab" id="fab-btn" onclick="openQuickAdd()" aria-label="إضافة سريع">+</button>
 
@@ -1656,7 +1711,7 @@ window.deleteDebt=function(side,id){ customConfirm('حذف هذا الدَين؟
 /* ── RENDER BARS ── */
 function renderBars(elId,expenses){ var cats={}; expenses.forEach(function(i){ cats[i.cat]=(cats[i.cat]||0)+i.amt; });
 var total=Object.values(cats).reduce(function(s,v){ return s+v; },0); var el=document.getElementById(elId); if(total===0){ el.innerHTML='<div class="empty">لا توجد مصاريف</div>'; return;
-} el.innerHTML=Object.entries(cats).sort(function(a,b){ return b[1]-a[1]; }).map(function(e){ var pct=Math.round((e[1]/total)*100),col=CC[e[0]]||'#888780'; return '<div class="bar-row"><div class="bar-lbl">'+escH(e[0])+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+col+';">'+pct+'%</div></div><div class="bar-amt">'+fmt(e[1])+'</div></div>'; }).join('');
+} el.innerHTML=Object.entries(cats).sort(function(a,b){ return b[1]-a[1]; }).map(function(e){ var pct=Math.round((e[1]/total)*100),col=CC[e[0]]||'#888780'; return '<div class="bar-row" onclick="openCatModal(\''+e[0]+'\',' + (elId==='o-bars' ? '\'overview\'' : '\'month\'') + ')" style="cursor:pointer;"><div class="bar-lbl">'+escH(e[0])+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+col+';">'+pct+'%</div></div><div class="bar-amt">'+fmt(e[1])+'</div></div>'; }).join('');
 }
 
 /* ── RENDER ITEMS ── */
@@ -2358,14 +2413,12 @@ function renderHome(){
     topEl.innerHTML = '<div class="empty" style="padding:8px 0;">لا توجد مصاريف بعد</div>';
   } else {
     topEl.innerHTML = top.list.map(function(c,idx){
-      return '<div class="cat-row">'
-        +'<div class="cat-rank'+(idx===0?' rank-1':'')+'">'+(idx+1)+'</div>'
-        +'<div class="cat-name">'+escH(c.name)+'</div>'
-        +'<div class="cat-pct">'+c.pct+'%</div>'
-        +'<div class="cat-amt">'+fmt(c.amt)+'</div>'
-        +'</div>';
-    }).join('');
-  }
+      return '<div class="cat-row" onclick="openCatModal(\''+escH(c.name)+'\',\'month\')" style="cursor:pointer;">'
+  +'<div class="cat-rank'+(idx===0?' rank-1':'')+'">'+(idx+1)+'</div>'
+  +'<div class="cat-name">'+escH(c.name)+'</div>'
+  +'<div class="cat-pct">'+c.pct+'%</div>'
+  +'<div class="cat-amt">'+fmt(c.amt)+'</div>'
+  +'</div>';
 
   // COMPARISON + SPARKLINE
   var months = recentMonths(6);
@@ -2578,6 +2631,70 @@ window.saveShortcutEdits = function() {
   renderShortcutsGrid();
   closeShortcutEdit();
 };
+
+/* ===== CATEGORY DRILL DOWN ===== */
+function openCatModal(catName, mode) {
+  var title = document.getElementById('cat-modal-title');
+  var total = document.getElementById('cat-modal-total');
+  var list  = document.getElementById('cat-modal-list');
+
+  title.textContent = catName;
+
+  if(mode === 'overview') {
+    // الإجمالي — مرتبة بالأشهر
+    var all = localData.budget;
+    var grandTotal = 0;
+    var html = '';
+    Object.keys(all).sort().forEach(function(y) {
+      [0,1,2,3,4,5,6,7,8,9,10,11].forEach(function(m) {
+        if(!all[y] || !all[y][m]) return;
+        var items = (all[y][m].expense||[]).filter(function(i){ return i.cat === catName; });
+        if(items.length === 0) return;
+        var monthTotal = items.reduce(function(s,i){ return s+i.amt; }, 0);
+        grandTotal += monthTotal;
+        html += '<div class="cat-modal-month-group">'
+          + '<div class="cat-modal-month-label">'
+          +   MN[m]+' '+y
+          +   '<span>'+kwdFormatter.format(monthTotal)+'</span>'
+          + '</div>'
+          + items.sort(function(a,b){ return b.amt-a.amt; }).map(function(i){
+              return '<div class="cat-modal-item">'
+                + '<span class="cat-modal-item-name">'+escH(i.name)+'</span>'
+                + '<span class="cat-modal-item-amt">'+fmt(i.amt)+'</span>'
+                + '</div>';
+            }).join('')
+          + '</div>';
+      });
+    });
+    list.innerHTML = html || '<div class="empty">لا توجد مصاريف</div>';
+    total.textContent = 'الإجمالي: ' + kwdFormatter.format(grandTotal);
+
+  } else {
+    // الشهر الحالي أو الرئيسية
+    var d = getMonthData(CY, CM);
+    var items = (d.expense||[]).filter(function(i){ return i.cat === catName; });
+    items.sort(function(a,b){ return b.amt - a.amt; });
+    var monthTotal = items.reduce(function(s,i){ return s+i.amt; }, 0);
+    total.textContent = 'الإجمالي: ' + kwdFormatter.format(monthTotal);
+    list.innerHTML = items.length === 0
+      ? '<div class="empty">لا توجد مصاريف</div>'
+      : items.map(function(i){
+          return '<div class="cat-modal-item">'
+            + '<span class="cat-modal-item-name">'+escH(i.name)+'</span>'
+            + '<span class="cat-modal-item-amt">'+fmt(i.amt)+'</span>'
+            + '</div>';
+        }).join('');
+  }
+
+  document.getElementById('cat-modal-overlay').classList.add('open');
+}
+
+window.closeCatModal = function(e) {
+  if(!e || e.target.id === 'cat-modal-overlay') {
+    document.getElementById('cat-modal-overlay').classList.remove('open');
+  }
+};
+  
 // تهيئة الداش بورد عند التحميل
 applyDashAccent(getDashAccent());
 renderShortcutsGrid();
