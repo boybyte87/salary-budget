@@ -1705,7 +1705,7 @@ window.addPayment=function(side,debtId){ var ae=document.getElementById('pay-amt
 window.deletePayment=function(side,debtId,payId){ customConfirm('حذف هذه الدفعة؟',function(){ var debt=localData.debt[side].find(function(i){ return String(i.id)===String(debtId); }); if(debt)debt.payments=debt.payments.filter(function(p){ return String(p.id)!==String(payId); }); saveToCloud(); renderDebt(); }); };
 window.deleteDebt=function(side,id){ customConfirm('حذف هذا الدَين؟ لن يمكن التراجع.',function(){ localData.debt[side]=localData.debt[side].filter(function(i){ return String(i.id)!==String(id); }); saveToCloud(); renderDebt(); }); };
 
-/* ── RENDER BARS MIGRATED & UPDATED ── */
+/* ── RENDER BARS ── */
 function renderBars(elId, expenses) {
   var cats = {};
   expenses.forEach(function (i) { cats[i.cat] = (cats[i.cat] || 0) + i.amt; });
@@ -1723,7 +1723,7 @@ function renderBars(elId, expenses) {
     var d = getMonthData(CY, CM);
     var cb = d.catBudgets || {};
 
-    // 1) بناء مصفوفة تحتوي على كافة التصنيفات لفرزها تنازلياً حسب قيمة الصرف الفعلي
+    // 1) فرز كافة الفئات تنازلياً حسب قيمة الصرف الفعلي
     var sortedCats = CATS.map(function (catName) {
       return {
         name: catName,
@@ -1734,7 +1734,7 @@ function renderBars(elId, expenses) {
       return b.spent - a.spent;
     });
 
-    // 2) توليد الواجهة النظيفة مع السطر السفلي المرتب (الميزانية | صرفت | متبقي)
+    // 2) توليد واجهة المستخدم النظيفة مع السطر السفلي (الميزانية | صرفت | متبقي)
     el.innerHTML = sortedCats.map(function (c) {
       var catName = c.name;
       var spent = c.spent;
@@ -1765,7 +1765,7 @@ function renderBars(elId, expenses) {
 
       return '<div class="bar-container" style="border-bottom:0.5px solid var(--border);padding:10px 4px;">'
         + '<div class="bar-row" onclick="openCatModal(\'' + catName + '\',\'month\')" style="cursor:pointer;margin-bottom:4px;display:flex;align-items:center;gap:9px;">'
-        + '<div class="bar-lbl" style="font-size:12.5px;min-width:90px;text-align:right;' + labelStyle + '">' + escH(catName).replace('مشتريات للبيت', 'حق البيت') + '</div>'
+        + '<div class="bar-lbl" style="font-size:12.5px;min-width:90px;text-align:right;' + labelStyle + '">' + escH(catName) + '</div>'
         + '<div class="bar-track" style="flex:1;height:18px;background:var(--surface2);border-radius:4px;overflow:hidden;">'
         + '<div class="bar-fill" style="width:' + totalPct + '%;background:' + col + ';height:100%;display:flex;align-items:center;justify-content:flex-end;padding-left:6px;font-size:10px;color:#fff;min-width:26px;">' + totalPct + '%</div>'
         + '</div>'
