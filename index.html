@@ -2414,12 +2414,14 @@ function renderHome(){
   } else {
     topEl.innerHTML = top.list.map(function(c,idx){
       return '<div class="cat-row" onclick="openCatModal(\''+escH(c.name)+'\',\'month\')" style="cursor:pointer;">'
-  +'<div class="cat-rank'+(idx===0?' rank-1':'')+'">'+(idx+1)+'</div>'
-  +'<div class="cat-name">'+escH(c.name)+'</div>'
-  +'<div class="cat-pct">'+c.pct+'%</div>'
-  +'<div class="cat-amt">'+fmt(c.amt)+'</div>'
-  +'</div>';
-
+        +'<div class="cat-rank'+(idx===0?' rank-1':'')+'">'+(idx+1)+'</div>'
+        +'<div class="cat-name">'+escH(c.name)+'</div>'
+        +'<div class="cat-pct">'+c.pct+'%</div>'
+        +'<div class="cat-amt">'+fmt(c.amt)+'</div>'
+        +'</div>';
+    }).join('');
+  }
+  
   // COMPARISON + SPARKLINE
   var months = recentMonths(6);
   var nonZero = months.filter(function(x){ return x.totals.inc>0 || x.totals.exp>0; });
