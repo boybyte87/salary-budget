@@ -785,7 +785,6 @@ body{
     <div class="dash-greet" id="dash-greet">أهلاً 👋</div>
     <div class="dash-month" id="dash-month">— —</div>
 
-    <!-- HERO -->
     <div class="hero-card">
       <div class="hero-top">
         <div class="hero-label">المتبقي من ميزانية الشهر</div>
@@ -802,7 +801,6 @@ body{
       </div>
     </div>
 
-    <!-- MICRO CARDS -->
     <div class="dash-mini-row">
       <div class="mini-card">
         <div class="mini-card-label"><span class="mini-card-dot" style="background:#1D9E75"></span>الدخل</div>
@@ -816,7 +814,6 @@ body{
       </div>
     </div>
 
-    <!-- DAILY BUDGET -->
     <div class="daily-card">
       <div class="daily-left">
         <div class="daily-title">تقدر تصرف اليوم</div>
@@ -826,7 +823,6 @@ body{
       <div class="daily-icon">💸</div>
     </div>
 
-    <!-- MONTHLY BUDGET SETTER -->
     <div class="budget-card">
       <div style="font-size:12px;color:var(--text2);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
         <span>🎯 ميزانية هذا الشهر (اختياري)</span>
@@ -839,10 +835,8 @@ body{
       </div>
     </div>
 
-    <!-- ALERTS -->
     <div id="dash-alerts"></div>
 
-    <!-- TOP CATEGORIES -->
     <div class="dash-sec-title">
       <span>أعلى فئات الصرف</span>
       <button class="sec-act" onclick="switchMain('month')">عرض الكل ←</button>
@@ -851,13 +845,11 @@ body{
       <div class="empty" style="padding:8px 0;">لا توجد مصاريف بعد</div>
     </div>
 
-<!-- FORECAST -->
 <div class="dash-sec-title"><span>توقّع نهاية الشهر</span></div>
 <div class="forecast-card" id="forecast-card">
   <div class="empty">سجّل مصاريف لتشوف التوقع</div>
 </div>
     
-<!-- TOP 5 EXPENSES -->
 <div class="dash-sec-title">
   <span>أكبر 5 مصاريف</span>
   <button class="sec-act" onclick="switchMain('month')">عرض الكل ←</button>
@@ -866,14 +858,12 @@ body{
   <div class="empty">لا توجد مصاريف بعد</div>
 </div>
     
-    <!-- COMPARISON -->
     <div class="dash-sec-title"><span>مقارنة مع آخر الأشهر</span></div>
     <div class="compare-card">
       <div class="compare-text" id="compare-text">سجّل أكثر من شهر عشان تشوف المقارنة.</div>
       <div class="spark-wrap" id="spark-wrap"></div>
     </div>
 
-    <!-- NET WORTH -->
     <div class="dash-sec-title"><span>الصافي المالي</span></div>
     <div class="net-card">
       <div class="net-label">صافي وضعك الحالي</div>
@@ -885,7 +875,6 @@ body{
       </div>
     </div>
 
-    <!-- COLOR PICKER -->
     <div class="dash-sec-title"><span>لون الداش بورد</span></div>
     <div class="budget-card" style="display:flex;align-items:center;justify-content:space-between;">
       <span style="font-size:12.5px;color:var(--text2);">اختر اللون المميز</span>
@@ -1088,7 +1077,6 @@ body{
   </div>
 </div>
 
-<!-- CATEGORY DRILL DOWN MODAL -->
 <div class="cat-modal-overlay" id="cat-modal-overlay" onclick="closeCatModal(event)">
   <div class="cat-modal-inner" onclick="event.stopPropagation()">
     <div class="cat-modal-header">
@@ -1102,7 +1090,6 @@ body{
   </div>
 </div>
   
-<!-- QUICK ADD FAB (الداش بورد فقط) -->
 <button class="fab" id="fab-btn" onclick="openQuickAdd()" aria-label="إضافة سريع">+</button>
 
 <div class="fab-sheet" id="fab-sheet" onclick="closeQuickAddOnBg(event)">
@@ -1110,14 +1097,12 @@ body{
     <div class="fab-sheet-grip"></div>
 <div class="fab-sheet-title">إضافة سريع</div>
 
-<!-- SHORTCUTS GRID -->
 <div class="fab-shortcuts-title">
   <span>اختصارات سريعة</span>
   <button onclick="openShortcutEdit()">✏️ تعديل</button>
 </div>
 <div class="fab-shortcuts-grid" id="fab-shortcuts-grid"></div>
 
-<!-- نافذة تأكيد الاختصار -->
 <div class="shortcut-confirm-sheet" id="shortcut-confirm-sheet">
   <div class="shortcut-confirm-inner">
     <div class="shortcut-confirm-icon" id="sc-icon"></div>
@@ -1131,7 +1116,6 @@ body{
   </div>
 </div>
 
-<!-- نافذة تعديل الاختصارات -->
 <div class="shortcut-edit-sheet" id="shortcut-edit-sheet">
   <div class="shortcut-edit-inner">
     <div class="shortcut-edit-title">✏️ تعديل الاختصارات</div>
@@ -1146,7 +1130,7 @@ body{
     </div>
     <div class="fab-form" id="qa-form-exp">
       <input type="text" id="qa-exp-name" placeholder="مثال: أكل، بنزين..."/>
-      <select id="exp-cat"><option>سكن</option><option>أكل وشرب</option><option>تنقل</option><option>تعليم</option><option>صحة</option><option>ترفيه</option><option>اشتراكات</option><option>تسوق</option><option>مشتريات للبيت</option><option>مصاريف متنوعة</option><option>أخرى</option></select>
+      <select id="qa-exp-cat"><option>سكن</option><option>أكل وشرب</option><option>تنقل</option><option>تعليم</option><option>صحة</option><option>ترفيه</option><option>اشتراكات</option><option>تسوق</option><option>مشتريات للبيت</option><option>مصاريف متنوعة</option><option>أخرى</option></select>
       <input type="number" id="qa-exp-amt" placeholder="المبلغ (د.ك)" min="0"/>
       <div class="fab-form-btns">
         <button class="fab-confirm-btn" onclick="quickAddSubmit('exp')">حفظ المصروف</button>
@@ -1705,6 +1689,40 @@ window.addPayment=function(side,debtId){ var ae=document.getElementById('pay-amt
 window.deletePayment=function(side,debtId,payId){ customConfirm('حذف هذه الدفعة؟',function(){ var debt=localData.debt[side].find(function(i){ return String(i.id)===String(debtId); }); if(debt)debt.payments=debt.payments.filter(function(p){ return String(p.id)!==String(payId); }); saveToCloud(); renderDebt(); }); };
 window.deleteDebt=function(side,id){ customConfirm('حذف هذا الدَين؟ لن يمكن التراجع.',function(){ localData.debt[side]=localData.debt[side].filter(function(i){ return String(i.id)!==String(id); }); saveToCloud(); renderDebt(); }); };
 
+window.clearMonthBudget = function(){
+  var d = getMonthData(CY, CM);
+  delete d.budget;
+  document.getElementById('budget-input').value='';
+  saveToCloud();
+  renderHome();
+};
+
+/* ── دوال ميزانيات التصنيفات الجديدة ── */
+window.toggleCatBudgetForm = function(cat) {
+  var form = document.getElementById('cb-form-' + cat.replace(/\s/g, '_'));
+  if(form) form.style.display = form.style.display === 'flex' ? 'none' : 'flex';
+};
+
+window.saveCatBudget = function(cat) {
+  var d = getMonthData(CY, CM);
+  if(!d.catBudgets) d.catBudgets = {};
+  var input = document.getElementById('cb-input-' + cat.replace(/\s/g, '_'));
+  var val = parseFloat(input.value);
+  if(isNaN(val) || val < 0) return;
+  d.catBudgets[cat] = val;
+  saveToCloud();
+  refreshAllScreens();
+};
+
+window.deleteCatBudget = function(cat) {
+  var d = getMonthData(CY, CM);
+  if(d.catBudgets && d.catBudgets[cat] !== undefined) {
+    delete d.catBudgets[cat];
+    saveToCloud();
+    refreshAllScreens();
+  }
+};
+
 /* ── RENDER BARS ── */
 function renderBars(elId, expenses) {
   var cats = {};
@@ -1812,31 +1830,6 @@ function renderItems(type, items, listId, amtClass) {
   }).join('');
 }
 
-/* ── RENDER ITEMS ── */
-function renderItems(type,items,listId,amtClass){
-  var el=document.getElementById(listId);
-  if(items.length===0){ el.innerHTML='<div class="empty">لا توجد بيانات</div>'; return; }
-  el.innerHTML=items.map(function(i){
-    if(editingId && editingId.type===type && String(editingId.id)===String(i.id)){
-      var catOpts=CATS.map(function(c){ return '<option'+(c===(i.cat||'')?' selected':'')+'>'+c+'</option>'; }).join('');
-      return '<div class="edit-row">'
-        +'<input type="text" id="edit-name-'+i.id+'" value="'+escH(i.name)+'" placeholder="الاسم" style="flex:1;min-width:80px"/>'
-        +(type==='expense'?'<select id="edit-cat-'+i.id+'">'+catOpts+'</select>':'')
-        +'<input type="number" id="edit-amt-'+i.id+'" value="'+(i.amt||0)+'" placeholder="المبلغ" style="max-width:100px" min="0"/>'
-        +'<button class="save-btn" onclick="saveEdit(\''+type+'\',\''+i.id+'\')">حفظ ✓</button>'
-        +'<button class="cancel-edit-btn" onclick="cancelEdit()">إلغاء</button>'
-        +'</div>';
-    }
-  
-  var nameHtml=type==='expense'
-      ?'<div class="irow-name">'+escH(i.name)+'</div><div class="irow-sub">'+escH(i.cat||'')+'</div>'
-      :'<div class="irow-name">'+escH(i.name)+'</div>';
-  return '<div class="irow" onclick="openCtx(event,\''+type+'\',\''+i.id+'\')" oncontextmenu="openCtx(event,\''+type+'\',\''+i.id+'\')">'
-      +'<div>'+nameHtml+'</div>'
-      +'<span class="iamt '+amtClass+'">'+fmt(i.amt||0)+'</span>'
-      +'</div>';
-  }).join('');
-}
 function escH(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 /* ── SEARCH live wiring ── */
@@ -2220,39 +2213,7 @@ window.setMonthBudget = function(){
   saveToCloud();
   renderHome();
 };
-window.clearMonthBudget = function(){
-  var d = getMonthData(CY, CM);
-  delete d.budget;
-  document.getElementById('budget-input').value='';
-  saveToCloud();
-  renderHome();
-};
 
-window.toggleCatBudgetForm = function(cat) {
-  var form = document.getElementById('cb-form-' + cat.replace(/\s/g, '_'));
-  if(form) form.style.display = form.style.display === 'flex' ? 'none' : 'flex';
-};
-
-window.saveCatBudget = function(cat) {
-  var d = getMonthData(CY, CM);
-  if(!d.catBudgets) d.catBudgets = {};
-  var input = document.getElementById('cb-input-' + cat.replace(/\s/g, '_'));
-  var val = parseFloat(input.value);
-  if(isNaN(val) || val < 0) return;
-  d.catBudgets[cat] = val;
-  saveToCloud();
-  refreshAllScreens();
-};
-
-window.deleteCatBudget = function(cat) {
-  var d = getMonthData(CY, CM);
-  if(d.catBudgets && d.catBudgets[cat] !== undefined) {
-    delete d.catBudgets[cat];
-    saveToCloud();
-    refreshAllScreens();
-  }
-};
-  
 // أيام الشهر / الباقي
 function daysInCurrentBudgetMonth(){
   return new Date(CY, CM+1, 0).getDate();
@@ -2324,7 +2285,7 @@ function buildAlerts(ctx){
   if(ctx.left > 0 && ctx.inc>0 && (ctx.left/ctx.inc) >= 0.3){
     alerts.push({type:'good', icon:'🎉', text:'وفّرت '+Math.round(ctx.left/ctx.inc*100)+'% من دخلك — حركك ممتاز'});
   }
-// 5) لا يوجد دخل مسجّل
+  // 5) لا يوجد دخل مسجّل
   if(ctx.inc === 0 && ctx.exp > 0){
     alerts.push({type:'warn', icon:'💡', text:'ما سجلت دخل لهذا الشهر — أضفه عشان تطلع المؤشرات صح'});
   }
@@ -2553,7 +2514,7 @@ function renderHome(){
     var cb = d.catBudgets || {};
     topEl.innerHTML = top.list.map(function(c,idx){
       var budget = cb[c.name] !== undefined ? cb[c.name] : null;
-      var displayPct = c.pct; // النسبة الافتراضية من المصاريف
+      var displayPct = c.pct; 
       var col = 'var(--text)';
       var extraInfo = "(صرفت " + numFormatter.format(c.amt) + " د.ك)";
       
@@ -2759,7 +2720,7 @@ window.openShortcutEdit = function() {
   var shortcuts = loadShortcuts();
   var rows = document.getElementById('shortcut-edit-rows');
   rows.innerHTML = shortcuts.map(function(s, i) {
-    var catOpts = ['سكن','أكل وشرب','تنقل','تعليم','صحة','ترفيه','اشتراكات','تسوق','مصاريف متنوعة','أخرى']
+    var catOpts = ['سكن','أكل وشرب','تنقل','تعليم','صحة','ترفيه','اشتراكات','تسوق','مشتريات للبيت','مصاريف متنوعة','أخرى']
       .map(function(c){ return '<option'+(c===s.cat?' selected':'')+'>'+c+'</option>'; }).join('');
     return '<div class="shortcut-edit-row">'
       + '<input class="shortcut-edit-emoji" id="se-icon-'+i+'" value="'+s.icon+'" maxlength="2" style="font-size:20px;text-align:center;width:44px;"/>'
