@@ -19,14 +19,16 @@
   --r-md:8px;--r-lg:14px;
   --font:system-ui,-apple-system,'Segoe UI',sans-serif;
 }
-/* THEMES */
-body.theme-light{--bg:#f2f1ec;--surface:#fff;--surface2:#f7f6f2;--text:#1a1a18;--text2:#6b6b68;--border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.2);--green-bg:#E1F5EE;--red-bg:#FAECE7;--blue-bg:#E6F1FB;--amber-bg:#FAEEDA;--accent:#185FA5;}
-body.theme-dark{--bg:#111110;--surface:#1c1c1a;--surface2:#242422;--text:#f0efea;--text2:#8a8a86;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);--green-bg:#04342C;--red-bg:#4A1B0C;--blue-bg:#042C53;--amber-bg:#412402;}
-body.theme-navy{--bg:#0d1b2a;--surface:#1b2a3b;--surface2:#243447;--text:#e8f0f7;--text2:#7a9ab5;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);--green-bg:#04342C;--red-bg:#4A1B0C;--blue-bg:#0a2540;--amber-bg:#412402;--accent:#4a9eff;}
-body.theme-gray{--bg:#e8e8e8;--surface:#f5f5f5;--surface2:#efefef;--text:#1a1a1a;--text2:#5a5a5a;--border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);--accent:#444;}
-body.theme-black{--bg:#000;--surface:#111;--surface2:#1a1a1a;--text:#f0f0f0;--text2:#888;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);--green-bg:#04342C;--red-bg:#4A1B0C;--blue-bg:#042C53;--amber-bg:#412402;--accent:#4a9eff;}
+/* THEMES & ACCENTS */
+body.theme-light{--bg:#f2f1ec;--surface:#fff;--surface2:#f7f6f2;--text:#1a1a18;--text2:#6b6b68;--border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.2);}
+body.theme-cream{--bg:#FDFBF7;--surface:#FAF7F0;--surface2:#F2EFE6;--text:#2C2A28;--text2:#757068;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);}
+body.theme-beige{--bg:#F5F0E6;--surface:#F0EBE0;--surface2:#E8E2D6;--text:#383530;--text2:#827D75;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);}
+body.theme-navy{--bg:#0d1b2a;--surface:#1b2a3b;--surface2:#243447;--text:#e8f0f7;--text2:#7a9ab5;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);}
+body.theme-gray{--bg:#e8e8e8;--surface:#f5f5f5;--surface2:#efefef;--text:#1a1a1a;--text2:#5a5a5a;--border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);}
+body.theme-black{--bg:#000;--surface:#111;--surface2:#1a1a1a;--text:#f0f0f0;--text2:#888;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);}
+
 @media(prefers-color-scheme:dark){
-  body:not([class*="theme-"]){--bg:#111110;--surface:#1c1c1a;--surface2:#242422;--text:#f0efea;--text2:#8a8a86;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);--green-bg:#04342C;--red-bg:#4A1B0C;--blue-bg:#042C53;--amber-bg:#412402;}
+  body:not([class*="theme-"]){--bg:#111110;--surface:#1c1c1a;--surface2:#242422;--text:#f0efea;--text2:#8a8a86;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);}
 }
 body{
   background:var(--bg);
@@ -746,12 +748,33 @@ body{
           <button class="menu-btn" onclick="exportJSON()">💾 تنزيل نسخة احتياطية</button>
           <button class="menu-btn" onclick="document.getElementById('json-import').click()">📂 استرجاع نسخة سابقة</button>
             <div class="theme-section">
-              <div class="theme-label">لون التطبيق</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <span class="theme-label" style="margin:0;">حجم الخط</span>
+                <div style="display:flex;gap:4px;">
+                  <button onclick="changeFontSize(1)" style="padding:2px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);color:var(--text);cursor:pointer;">A+</button>
+                  <button onclick="changeFontSize(0)" style="padding:2px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);color:var(--text);cursor:pointer;">A</button>
+                  <button onclick="changeFontSize(-1)" style="padding:2px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);color:var(--text);cursor:pointer;">A-</button>
+                </div>
+              </div>
+              
+              <div class="theme-label">الخلفية (الثيم)</div>
+              <div class="theme-swatches" style="margin-bottom:12px;">
+                <div class="swatch" style="background:#fff;border:1.5px solid #ccc;" title="أبيض" onclick="setTheme('light')"></div>
+                <div class="swatch" style="background:#FAF7F0;border:1.5px solid #ccc;" title="سكري" onclick="setTheme('cream')"></div>
+                <div class="swatch" style="background:#F0EBE0;border:1.5px solid #ccc;" title="بيج" onclick="setTheme('beige')"></div>
+                <div class="swatch" style="background:#1b2a3b;" title="كحلي" onclick="setTheme('navy')"></div>
+                <div class="swatch" style="background:#f5f5f5;border:1.5px solid #ccc;" title="رمادي" onclick="setTheme('gray')"></div>
+                <div class="swatch" style="background:#111;" title="أسود" onclick="setTheme('black')"></div>
+              </div>
+              
+              <div class="theme-label">اللون المميّز للتطبيق</div>
               <div class="theme-swatches">
-                <div class="swatch" style="background:#f2f1ec;border:1.5px solid #bbb;" title="فاتح" onclick="setTheme('light')" id="sw-light"></div>
-                <div class="swatch" style="background:#1c1c1a;" title="داكن" onclick="setTheme('dark')" id="sw-dark"></div>
-                <div class="swatch" style="background:#000;" title="أسود" onclick="setTheme('black')" id="sw-black"></div>
-                <div class="swatch" style="background:#0d1b2a;" title="كحلي" onclick="setTheme('navy')" id="sw-navy"></div>
+                <div class="swatch" style="background:#185FA5;" title="أزرق" onclick="setAccent('#185FA5')"></div>
+                <div class="swatch" style="background:#C84B6E;" title="وردي" onclick="setAccent('#C84B6E')"></div>
+                <div class="swatch" style="background:#8E44AD;" title="لافندر" onclick="setAccent('#8E44AD')"></div>
+                <div class="swatch" style="background:#0F6E56;" title="زمردي" onclick="setAccent('#0F6E56')"></div>
+                <div class="swatch" style="background:#A66A0E;" title="برتقالي" onclick="setAccent('#A66A0E')"></div>
+                <div class="swatch" style="background:#3D4654;" title="رصاصي" onclick="setAccent('#3D4654')"></div>
               </div>
             </div>
             <button class="signout-btn" onclick="signOutUser()">تسجيل الخروج</button>
@@ -874,13 +897,6 @@ body{
         <span>⚠️ ديون: <b id="net-owe">0</b></span>
       </div>
     </div>
-
-    <div class="dash-sec-title"><span>لون الداش بورد</span></div>
-    <div class="budget-card" style="display:flex;align-items:center;justify-content:space-between;">
-      <span style="font-size:12.5px;color:var(--text2);">اختر اللون المميز</span>
-      <div class="dash-colors" id="dash-color-picker"></div>
-    </div>
-  </div>
 
   <div class="page" id="page-month">
     <div style="height:14px"></div>
@@ -1236,13 +1252,42 @@ window.uploadBackground = function(e) {
     reader.readAsDataURL(file);
   }
 };
+/* ── إعدادات المظهر والخط ── */
 window.setTheme = function(t) {
   document.body.className = 'theme-' + t;
   localStorage.setItem('budget-theme', t);
 };
+
+window.setAccent = function(color) {
+  // تغيير اللون المميز الأساسي للبرنامج وللداش بورد بضغطة واحدة
+  document.documentElement.style.setProperty('--accent', color);
+  document.documentElement.style.setProperty('--dash-accent', color);
+  
+  // حساب الشفافية الذكية لخلفيات الأيقونات
+  var hex = color.replace('#', '');
+  var r = parseInt(hex.substring(0, 2), 16), g = parseInt(hex.substring(2, 4), 16), b = parseInt(hex.substring(4, 6), 16);
+  document.documentElement.style.setProperty('--dash-accent-bg', 'rgba('+r+','+g+','+b+',0.10)');
+  document.documentElement.style.setProperty('--dash-accent-soft', 'rgba('+r+','+g+','+b+',0.20)');
+  
+  localStorage.setItem('budget-accent', color);
+};
+
+let currentZoom = parseFloat(localStorage.getItem('budget-zoom')) || 1;
+window.changeFontSize = function(step) {
+  if(step === 0) currentZoom = 1;
+  else if(step === 1) currentZoom = Math.min(1.2, currentZoom + 0.05);
+  else if(step === -1) currentZoom = Math.max(0.8, currentZoom - 0.05);
+  
+  document.body.style.zoom = currentZoom;
+  localStorage.setItem('budget-zoom', currentZoom);
+};
+
 (function initSettings() {
   const savedTheme = localStorage.getItem('budget-theme');
   if(savedTheme) document.body.className = 'theme-' + savedTheme;
+  const savedAccent = localStorage.getItem('budget-accent');
+  if(savedAccent) setAccent(savedAccent);
+  document.body.style.zoom = currentZoom;
   loadBgFromIDB(); 
 })();
 
@@ -2836,7 +2881,6 @@ window.closeCatModal = function(e) {
 };
   
 // تهيئة الداش بورد عند التحميل
-applyDashAccent(getDashAccent());
 renderShortcutsGrid();
 // إظهار FAB لأن الصفحة الافتراضية = الداش
 setTimeout(function(){
