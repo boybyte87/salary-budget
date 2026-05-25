@@ -890,16 +890,16 @@ body{
       <div class="card"><div class="card-label">المتبقي</div><div class="card-val cv-b" id="m-left">0 د.ك</div></div>
     </div>
 
-    <div class="box">
+   <div class="box">
       <div class="box-head">
         <span class="box-title"><span class="dot dg"></span>مصادر الدخل</span>
         <div style="display:flex;align-items:center;gap:7px;">
           <span class="box-tot" id="m-inc-t"></span>
           <button class="sort-btn" id="sort-income" onclick="cycleSort('income')">ترتيب ↕</button>
-          <button class="toggle-btn" id="btn-inc-section" onclick="toggleVisibility('inc-section')">🔽</button>
+          <button class="toggle-btn" id="btn-m-inc-list" onclick="toggleVisibility('m-inc-list')">🔽</button>
         </div>
       </div>
-      <div id="inc-section">
+      <div>
         <div id="m-inc-list"></div>
         <div class="add-row">
           <input type="text" id="inc-name" placeholder="مثال: راتب، عمل حر..." class="ac-input" data-ac="income" autocomplete="off"/>
@@ -915,10 +915,10 @@ body{
         <div style="display:flex;align-items:center;gap:7px;">
           <span class="box-tot" id="m-exp-t"></span>
           <button class="sort-btn" id="sort-expense" onclick="cycleSort('expense')">ترتيب ↕</button>
-          <button class="toggle-btn" id="btn-exp-section" onclick="toggleVisibility('exp-section')">🔽</button>
+          <button class="toggle-btn" id="btn-m-exp-list" onclick="toggleVisibility('m-exp-list')">🔽</button>
         </div>
       </div>
-      <div id="exp-section">
+      <div>
         <div class="search-wrap" style="display:flex;gap:6px;">
           <input type="text" class="search-input" id="search-exp" placeholder="🔍 ابحث في المصاريف..."/>
         </div>
@@ -932,8 +932,11 @@ body{
       </div>
     </div>
 
-    <div class="box">
-      <div class="box-head"><span class="box-title">توزيع المصاريف</span></div>
+   <div class="box">
+      <div class="box-head">
+        <span class="box-title">توزيع المصاريف</span>
+        <button class="toggle-btn" id="btn-m-bars" onclick="toggleVisibility('m-bars')">🔽</button>
+      </div>
       <div class="bars-wrap" id="m-bars"><div class="empty">أضف مصاريف لتشوف التوزيع</div></div>
     </div>
     <div class="box">
@@ -1735,7 +1738,7 @@ function renderBars(elId, expenses) {
     if (total === 0) { el.innerHTML = '<div class="empty">لا توجد مصاريف</div>'; return; }
     el.innerHTML = Object.entries(cats).sort(function (a, b) { return b[1] - a[1]; }).map(function (e) {
       var pct = Math.round((e[1] / total) * 100), col = CC[e[0]] || '#888780';
-      return '<div class="bar-row" onclick="openCatModal(\'' + e[0] + '\',\'overview\')"><div class="bar-lbl">' + escH(e[0]) + '</div><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + col + ';">' + pct + '%</div></div><div class="bar-amt">' + fmt(e[1]) + '</div></div>';
+      return '<div class="bar-row" onclick="openCatModal(\'' + e[0] + '\',\'overview\')"><div class="bar-lbl" style="font-weight:600;color:'+col+';">' + escH(e[0]) + '</div><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + col + ';">' + pct + '%</div></div><div class="bar-amt">' + fmt(e[1]) + '</div></div>';
     }).join('');
   } else {
     var d = getMonthData(CY, CM);
@@ -1752,7 +1755,7 @@ function renderBars(elId, expenses) {
       return b.spent - a.spent;
     });
 
-    // 2) توليد واجهة المستخدم النظيفة مع السطر السفلي (الميزانية | صرفت | متبقي)
+    // 2) توليد واجهة المستخدم النظيفة مع السطر السفلي
     el.innerHTML = sortedCats.map(function (c) {
       var catName = c.name;
       var spent = c.spent;
@@ -1779,11 +1782,13 @@ function renderBars(elId, expenses) {
       }
 
       var catId = catName.replace(/\s/g, '_');
-      var labelStyle = budget !== null ? 'font-weight:600;color:' + col : '';
+      
+      // التعديل السحري هنا: توحيد اللون بشكل دائم سواء بوجود ميزانية أو لا
+      var labelStyle = 'font-weight:600;color:' + col;
 
       return '<div class="bar-container" style="border-bottom:0.5px solid var(--border);padding:10px 4px;">'
         + '<div class="bar-row" onclick="openCatModal(\'' + catName + '\',\'month\')" style="cursor:pointer;margin-bottom:4px;display:flex;align-items:center;gap:9px;">'
-        + '<div class="bar-lbl" style="font-size:12.5px;min-width:90px;text-align:right;' + labelStyle + '">' + escH(catName) + '</div>'
+        + '<div class="bar-lbl" style="font-size:12.5px;min-width:90px;text-align:right;' + labelStyle + '">' + escH(catName).replace('مشتريات للبيت', 'حق البيت') + '</div>'
         + '<div class="bar-track" style="flex:1;height:18px;background:var(--surface2);border-radius:4px;overflow:hidden;">'
         + '<div class="bar-fill" style="width:' + totalPct + '%;background:' + col + ';height:100%;display:flex;align-items:center;justify-content:flex-end;padding-left:6px;font-size:10px;color:#fff;min-width:26px;">' + totalPct + '%</div>'
         + '</div>'
