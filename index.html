@@ -21,16 +21,25 @@
 }
 /* THEMES & ACCENTS */
 body.theme-light{--bg:#f2f1ec;--surface:#fff;--surface2:#f7f6f2;--text:#1a1a18;--text2:#6b6b68;--border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.2);}
-body.theme-cream{--bg:#FDFBF7;--surface:#FAF7F0;--surface2:#F2EFE6;--text:#2C2A28;--text2:#757068;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);}
-body.theme-beige{--bg:#F5F0E6;--surface:#F0EBE0;--surface2:#E8E2D6;--text:#383530;--text2:#827D75;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);}
+body.theme-cream{--bg:#E8E2D2;--surface:#F2ECE0;--surface2:#DFD7C4;--text:#2C2A28;--text2:#757068;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);}
+body.theme-beige{--bg:#D8CDBD;--surface:#E2D6C5;--surface2:#CDBEA8;--text:#383530;--text2:#827D75;--border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.16);}
 body.theme-navy{--bg:#0d1b2a;--surface:#1b2a3b;--surface2:#243447;--text:#e8f0f7;--text2:#7a9ab5;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);}
-body.theme-gray{--bg:#e8e8e8;--surface:#f5f5f5;--surface2:#efefef;--text:#1a1a1a;--text2:#5a5a5a;--border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);}
+body.theme-gray{--bg:#d1d5db;--surface:#e2e8f0;--surface2:#cbd5e1;--text:#1e293b;--text2:#475569;--border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);}
 body.theme-black{--bg:#000;--surface:#111;--surface2:#1a1a1a;--text:#f0f0f0;--text2:#888;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);}
 
 @media(prefers-color-scheme:dark){
   body:not([class*="theme-"]){--bg:#111110;--surface:#1c1c1a;--surface2:#242422;--text:#f0efea;--text2:#8a8a86;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);}
 }
-body{
+
+/* FIXES FOR TABS & ALERTS */
+.topbar { height: 57px; } /* إجبار الارتفاع لضمان عدم وجود فراغ */
+.main-tabs::-webkit-scrollbar { display: none; } /* إخفاء الأسهم المزعجة */
+.main-tabs { -ms-overflow-style: none; scrollbar-width: none; }
+.alert-card { background: var(--dash-accent-bg); } /* ربط التنبيهات باللون المميز */
+.forecast-scenario.better{background:var(--dash-accent-bg);border-color:var(--dash-accent);}
+.forecast-sc-amt.better{color:var(--dash-accent);}
+
+body {
   background:var(--bg);
   font-family:var(--font);
   direction:rtl;
@@ -898,7 +907,7 @@ body{
       </div>
     </div>
 
-  <div class="page" id="page-month">
+  </div> <div class="page" id="page-month">
     <div style="height:14px"></div>
     <div class="cards3">
       <div class="card"><div class="card-label">المدخول</div><div class="card-val cv-g" id="m-inc">0 د.ك</div></div>
@@ -2342,7 +2351,7 @@ function buildAlerts(ctx){
   }
   // 2) تجاوز الميزانية
   if(ctx.budget && ctx.exp > ctx.budget){
-    alerts.push({type:'bad', icon:'🚨', text:'تعديت ميزانية الشهر بـ '+kwdFormatter.format(ctx.exp-ctx.budget)});
+    alerts.push({type:'bad', icon:'🚨', text:'تعديت ميزانية الشهر بـ '+fmt(ctx.exp-ctx.budget)});
   }
   // 3) معدل صرف عالي
   if(ctx.budget && ctx.exp >= ctx.budget*0.8 && ctx.exp <= ctx.budget){
@@ -2366,7 +2375,7 @@ function buildAlerts(ctx){
       var sAmt = catsSpent[cat] || 0;
       var bAmt = dCurrent.catBudgets[cat];
       if(sAmt > bAmt) {
-        alerts.push({type:'bad', icon:'🚨', text:'تعديت ميزانية فئة "' + cat + '" بـ ' + kwdFormatter.format(sAmt - bAmt)});
+        alerts.push({type:'bad', icon:'🚨', text:'تعديت ميزانية فئة "' + cat + '" بـ ' + fmt(sAmt - bAmt)});
       }
     });
   }
@@ -2391,7 +2400,7 @@ function renderHome(){
 
   // HERO
   var heroAmt = document.getElementById('hero-amt');
-  heroAmt.textContent = fmts(left);
+  heroAmt.textContent = fmt(left);
   heroAmt.classList.toggle('over', left<0);
 
   document.getElementById('hero-spent').textContent = fmt(exp);
@@ -2423,7 +2432,6 @@ function renderHome(){
   document.getElementById('mini-inc').textContent = fmt(inc);
   document.getElementById('mini-exp').textContent = fmt(exp);
 
-  // دلتا مقارنة بالشهر اللي طاف
   var prevY = CY, prevM = CM-1;
   if(prevM<0){ prevM=11; prevY--; }
   var prev = monthTotals(prevY, prevM);
@@ -2441,7 +2449,6 @@ function renderHome(){
 
   var expEl = document.getElementById('mini-exp-delta');
   expEl.textContent = deltaText(exp, prev.exp, 'الشهر');
-  // للمصاريف: زيادة سيئة، نقص جيد (معكوس)
   expEl.className = 'mini-card-delta' + (exp>prev.exp?' up':(exp<prev.exp?' down':''));
 
   // DAILY BUDGET
@@ -2459,14 +2466,14 @@ function renderHome(){
     subEl.textContent = 'باقي '+daysLeft+' يوم لنهاية الشهر';
   }
 
-  // BUDGET INPUT حالة
+  // BUDGET INPUT
   var bInput = document.getElementById('budget-input');
   var bClear = document.getElementById('budget-clear');
   var bStatus = document.getElementById('budget-status');
   if(budget>0){
     bInput.value = budget;
     bClear.style.display = '';
-    bStatus.textContent = 'محفوظ: '+kwdFormatter.format(budget);
+    bStatus.textContent = 'محفوظ: '+fmt(budget);
     bStatus.style.color = 'var(--green)';
   } else {
     bInput.value = '';
@@ -2483,44 +2490,37 @@ function renderHome(){
       return '<div class="alert-card '+a.type+'"><span class="alert-icon">'+a.icon+'</span><span>'+escH(a.text)+'</span></div>';
     }).join('');
 
-// FORECAST
+  // FORECAST
   var forecastEl = document.getElementById('forecast-card');
   if(forecastEl) {
     var today = new Date();
     var isCurrentMonth = (today.getFullYear()===CY && today.getMonth()===CM);
     var daysTotal = daysInCurrentBudgetMonth();
     var daysPassed = isCurrentMonth ? today.getDate() : daysTotal;
-    var daysLeft = daysTotal - daysPassed;
+    var daysLeftFC = daysTotal - daysPassed;
 
     if(exp === 0 || daysPassed === 0) {
       forecastEl.innerHTML = '<div class="empty">سجّل مصاريف لتشوف التوقع</div>';
     } else {
-      // معدل الصرف اليومي
       var dailyRate = exp / daysPassed;
-      // سيناريو 1: نفس المعدل
-      var forecastSame = exp + (dailyRate * daysLeft);
-      // سيناريو 2: تخفيض 20%
-      var forecastLess = exp + (dailyRate * 0.8 * daysLeft);
-      // أساس المقارنة
+      var forecastSame = exp + (dailyRate * daysLeftFC);
+      var forecastLess = exp + (dailyRate * 0.8 * daysLeftFC);
       var base = budget > 0 ? budget : inc;
 
-      // تحديد حالة السيناريو الأول
       var sc1Class = 'good', sc1AmtClass = 'good';
       if(base > 0) {
         if(forecastSame > base) { sc1Class='bad'; sc1AmtClass='bad'; }
         else if(forecastSame > base*0.85) { sc1Class='warn'; sc1AmtClass='warn'; }
       }
 
-      // تحديد حالة السيناريو الثاني
       var sc2Class = 'better', sc2AmtClass = 'better';
       if(base > 0 && forecastLess > base) { sc2Class='warn'; sc2AmtClass='warn'; }
 
-      // رسالة تنبيه
       var alertHtml = '';
       if(base > 0) {
         if(forecastSame > base) {
           var overBy = forecastSame - base;
-          alertHtml = '<div class="forecast-alert bad">🚨 بالمعدل الحالي راح تتجاوز الميزانية بـ ' + kwdFormatter.format(overBy) + '</div>';
+          alertHtml = '<div class="forecast-alert bad">🚨 بالمعدل الحالي راح تتجاوز الميزانية بـ ' + fmt(overBy) + '</div>';
         } else if(forecastSame > base*0.85) {
           alertHtml = '<div class="forecast-alert warn">⚠️ قريب من الحد — انتبه لصرفك باقي الشهر</div>';
         } else {
@@ -2529,16 +2529,16 @@ function renderHome(){
       }
 
       forecastEl.innerHTML =
-        '<div style="font-size:12px;color:var(--text2);">بناءً على معدل صرفك اليومي <b style="color:var(--text)">' + kwdFormatter.format(dailyRate) + '/يوم</b> — باقي <b style="color:var(--text)">' + daysLeft + '</b> يوم</div>'
+        '<div style="font-size:12px;color:var(--text2);">بناءً على معدل صرفك اليومي <b style="color:var(--text)">' + fmt(dailyRate) + '/يوم</b> — باقي <b style="color:var(--text)">' + daysLeftFC + '</b> يوم</div>'
         + '<div class="forecast-scenarios">'
         +   '<div class="forecast-scenario '+sc1Class+'">'
         +     '<div class="forecast-sc-label">بنفس المعدل</div>'
-        +     '<div class="forecast-sc-amt '+sc1AmtClass+'">' + kwdFormatter.format(forecastSame) + '</div>'
+        +     '<div class="forecast-sc-amt '+sc1AmtClass+'">' + fmt(forecastSame) + '</div>'
         +     '<div class="forecast-sc-sub">إجمالي متوقع للشهر</div>'
         +   '</div>'
         +   '<div class="forecast-scenario '+sc2Class+'">'
         +     '<div class="forecast-sc-label">لو خفّضت 20%</div>'
-        +     '<div class="forecast-sc-amt '+sc2AmtClass+'">' + kwdFormatter.format(forecastLess) + '</div>'
+        +     '<div class="forecast-sc-amt '+sc2AmtClass+'">' + fmt(forecastLess) + '</div>'
         +     '<div class="forecast-sc-sub">إجمالي متوقع للشهر</div>'
         +   '</div>'
         + '</div>'
@@ -2546,7 +2546,7 @@ function renderHome(){
     }
   }
   
-// TOP 5 EXPENSES
+  // TOP 5 EXPENSES
   var top5El = document.getElementById('top5-expenses');
   if(top5El) {
     var expenses = (d.expense||[]).slice().sort(function(a,b){ return b.amt - a.amt; }).slice(0,5);
@@ -2583,7 +2583,7 @@ function renderHome(){
       var budget = cb[c.name] !== undefined ? cb[c.name] : null;
       var displayPct = c.pct; 
       var col = 'var(--text)';
-      var extraInfo = "(صرفت " + numFormatter.format(c.amt) + " د.ك)";
+      var extraInfo = "(صرفت " + fmt(c.amt) + ")";
       
       if(budget !== null) {
         displayPct = budget > 0 ? Math.round((c.amt / budget) * 100) : 0;
@@ -2592,7 +2592,7 @@ function renderHome(){
         else if(displayPct >= 80) col = 'var(--amber)';
         else col = 'var(--green)';
         
-        extraInfo = "(صرفت " + numFormatter.format(c.amt) + " / متبقي " + numFormatter.format(rem) + " د.ك)";
+        extraInfo = "(صرفت " + fmt(c.amt) + " / متبقي " + fmt(rem) + ")";
       }
       
       return '<div class="cat-row" onclick="openCatModal(\''+escH(c.name)+'\',\'month\')" style="cursor:pointer;">'
@@ -2621,7 +2621,6 @@ function renderHome(){
         +'</div>';
     }).join('');
 
-    // متوسط آخر 3 أشهر سابقة
     var prevMonths = months.slice(0,-1).filter(function(x){return x.totals.exp>0;});
     if(prevMonths.length>0){
       var avg = prevMonths.reduce(function(s,x){return s+x.totals.exp;},0) / prevMonths.length;
@@ -2629,9 +2628,9 @@ function renderHome(){
         var diff = exp - avg;
         var pctd = Math.round((Math.abs(diff)/avg)*100);
         if(diff>0){
-          compareEl.innerHTML = 'صرفت <b class="up">+'+pctd+'%</b> أكثر من متوسط آخر '+prevMonths.length+' أشهر ('+kwdFormatter.format(avg)+').';
+          compareEl.innerHTML = 'صرفت <b class="up">+'+pctd+'%</b> أكثر من متوسط آخر '+prevMonths.length+' أشهر ('+fmt(avg)+').';
         } else if(diff<0){
-          compareEl.innerHTML = 'صرفت <b class="down">−'+pctd+'%</b> أقل من متوسط آخر '+prevMonths.length+' أشهر ('+kwdFormatter.format(avg)+'). 👏';
+          compareEl.innerHTML = 'صرفت <b class="down">−'+pctd+'%</b> أقل من متوسط آخر '+prevMonths.length+' أشهر ('+fmt(avg)+'). 👏';
         } else {
           compareEl.textContent = 'صرفك مطابق لمتوسط آخر '+prevMonths.length+' أشهر.';
         }
