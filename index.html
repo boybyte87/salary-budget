@@ -1855,7 +1855,7 @@ function debounce(func, wait) {
   };
 }
 
-/* ── RENDER MONTH ── */
+/* ── RENDER MONTH MIGRATED & PERFECTED ── */
 function renderMonth(){
   var d=getMonthData(CY,CM);
   var tI=d.income.reduce(function(s,i){ return s+i.amt; },0);
@@ -1870,7 +1870,24 @@ function renderMonth(){
   var searchExp=(document.getElementById('search-exp').value||'').trim().toLowerCase();
   var incItems=applySort(d.income,'income');
   var expItems=applySort(d.expense,'expense');
-  if(searchExp) expItems=expItems.filter(function(i){ return i.name.toLowerCase().includes(searchExp)||(i.cat||'').toLowerCase().includes(searchExp); });
+  
+  var expListEl = document.getElementById('m-exp-list');
+  if(searchExp) {
+    expItems=expItems.filter(function(i){ return i.name.toLowerCase().includes(searchExp)||(i.cat||'').toLowerCase().includes(searchExp); });
+    // إذا بدأ المستخدم بالكتابة والصندوق مغلق -> افتحه تلقائياً لعرض النتائج
+    if(expListEl && expListEl.style.display === 'none') {
+      expListEl.style.display = 'block';
+      var btnExp = document.getElementById('btn-m-exp-list');
+      if(btnExp) btnExp.textContent = '🔽';
+    }
+  } else {
+    // إذا مسح المستخدم نص البحث بالكامل وعاد الحقل فارغاً -> أعد طي الصندوق تلقائياً ليبقى المظهر مرتباً
+    if(expListEl) {
+      expListEl.style.display = 'none';
+      var btnExpClose = document.getElementById('btn-m-exp-list');
+      if(btnExpClose) btnExpClose.textContent = '🔽'; 
+    }
+  }
 
   renderItems('income',incItems,'m-inc-list','iamt-g');
   renderItems('expense',expItems,'m-exp-list','iamt-r');
