@@ -24,7 +24,7 @@ body.theme-light{--bg:#f2f1ec;--surface:#fff;--surface2:#f7f6f2;--text:#1a1a18;-
 body.theme-cream{--bg:#E8E2D2;--surface:#F2ECE0;--surface2:#DFD7C4;--text:#2C2A28;--text2:#757068;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);}
 body.theme-beige{--bg:#D8CDBD;--surface:#E2D6C5;--surface2:#CDBEA8;--text:#383530;--text2:#827D75;--border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.16);}
 body.theme-navy{--bg:#0d1b2a;--surface:#1b2a3b;--surface2:#243447;--text:#e8f0f7;--text2:#7a9ab5;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);}
-body.theme-gray{--bg:#d1d5db;--surface:#e2e8f0;--surface2:#cbd5e1;--text:#1e293b;--text2:#475569;--border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);}
+body.theme-gray{--bg:#94a3b8;--surface:#cbd5e1;--surface2:#e2e8f0;--text:#0f172a;--text2:#334155;--border:rgba(0,0,0,0.15);--border2:rgba(0,0,0,0.25);}
 body.theme-black{--bg:#000;--surface:#111;--surface2:#1a1a1a;--text:#f0f0f0;--text2:#888;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);}
 
 @media(prefers-color-scheme:dark){
@@ -107,12 +107,12 @@ body {
 .card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:13px 15px;}
 .card-label{font-size:11px;color:var(--text2);margin-bottom:5px;}
 .card-val{font-size:17px;font-weight:500;}
-.cv-g{color:var(--green);}.cv-r{color:var(--red);}.cv-b{color:var(--blue);}
+.cv-g{color:var(--green);}.cv-r{color:var(--red);}.cv-b{color:var(--accent);}
 .box{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r-lg);margin-bottom:12px;overflow:hidden;}
 .box-head{display:flex;align-items:center;justify-content:space-between;padding:12px 15px;border-bottom:0.5px solid var(--border);}
 .box-title{font-size:14px;font-weight:500;display:flex;align-items:center;gap:7px;}
 .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-.dg{background:#1D9E75;}.dr{background:#D85A30;}.db{background:#378ADD;}
+.dg{background:#1D9E75;}.dr{background:#D85A30;}.db{background:var(--accent);}
 .box-tot{font-size:12px;color:var(--text2);}
 .sort-btn{font-size:11px;padding:3px 9px;border:0.5px solid var(--border2);border-radius:20px;background:var(--surface2);color:var(--text2);cursor:pointer;font-family:var(--font);white-space:nowrap;transition:all .15s;}
 .sort-btn:hover{background:var(--bg);color:var(--text);}
@@ -1012,9 +1012,9 @@ body {
       <div class="card"><div class="card-label">إجمالي الدخل</div><div class="card-val cv-g" id="o-inc">0 د.ك</div></div>
       <div class="card"><div class="card-label">إجمالي المصاريف</div><div class="card-val cv-r" id="o-exp">0 د.ك</div></div>
       <div class="card"><div class="card-label">المتبقي (فائض)</div><div class="card-val cv-b" id="o-left">0 د.ك</div></div>
-      <div class="card" style="background:var(--blue-bg); border-color:var(--blue);">
-        <div class="card-label" style="color:var(--blue);">صافي المدخرات الفعلية</div>
-        <div class="card-val" style="color:var(--blue);" id="o-sav-total">0 د.ك</div>
+      <div class="card" style="background:var(--dash-accent-bg); border-color:var(--accent);">
+        <div class="card-label" style="color:var(--accent);">صافي المدخرات الفعلية</div>
+        <div class="card-val" style="color:var(--accent);" id="o-sav-total">0 د.ك</div>
       </div>
     </div>
     <div class="cards2" style="margin-top:-5px;">
@@ -1648,7 +1648,7 @@ function renderSavings() {
 
       var wh = sav.withdrawals.length>0 ? '<div class="debt-payments"><div style="font-size:11px;color:var(--text2);margin-bottom:4px;margin-top:6px;">سجل السحوبات:</div>'+sav.withdrawals.map(w => '<div class="payment-row"><span>'+escH(w.reason)+' — '+w.date+'</span><span style="display:flex;align-items:center;gap:8px;"><b style="color:var(--red)">'+fmt(w.amt)+'</b><button class="del-btn" onclick="deleteWithdrawal(\''+sav.id+'\',\''+w.id+'\')">✕</button></span></div>').join('')+'</div>' : '';
       var pf = rem>0 ? '<div style="margin-top:8px;"><button class="pay-btn" onclick="togglePayForm(\'ws-'+sav.id+'\')">💸 سحب من الرصيد</button><div id="pf-ws-'+sav.id+'" style="display:none;margin-top:7px;flex-wrap:wrap;gap:6px;"><input type="number" id="w-amt-'+sav.id+'" placeholder="المبلغ" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-family:var(--font);width:110px" min="0"/><input type="text" id="w-reason-'+sav.id+'" placeholder="السبب" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-family:var(--font);flex:1;min-width:100px"/><button class="add-btn" style="font-size:12px;padding:5px 11px" onclick="addWithdrawal(\''+sav.id+'\')">تأكيد</button></div></div>' : '';
-      var actionBtns = '<div style="display:flex;gap:6px;margin-top:10px;"><button class="pay-btn" style="color:var(--blue);border-color:var(--blue);" onclick="editSaving(\''+sav.id+'\')">✏️ تعديل</button><button class="pay-btn" style="color:var(--red);border-color:var(--red);" onclick="deleteSaving(\''+sav.id+'\')">🗑️ حذف</button></div>';
+      var actionBtns = '<div style="display:flex;gap:6px;margin-top:10px;"><button class="pay-btn" style="color:var(--accent);border-color:var(--accent);" onclick="editSaving(\''+sav.id+'\')">✏️ تعديل</button><button class="pay-btn" style="color:var(--red);border-color:var(--red);" onclick="deleteSaving(\''+sav.id+'\')">🗑️ حذف</button></div>';
 
       return '<div class="person-card" style="margin:10px;border-radius:var(--r-lg);"><div class="person-head" onclick="togglePersonBody(\'sav-'+sav.id+'\')"><span class="person-name-row"><span style="width:32px;height:32px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0;">💰</span><div style="display:flex;flex-direction:column;"><span style="font-size:14px;">'+escH(sav.name)+'</span><span style="font-size:10px;color:var(--text2);margin-top:2px;">تم الإضافة: '+sav.date+'</span></div></span><span style="font-size:13px;font-weight:500;color:var(--green);">'+fmt(Math.max(0,rem))+'</span></div><div class="person-body" id="pb-sav-'+sav.id+'"><div style="padding:10px 15px;background:var(--surface2);display:flex;justify-content:space-between;font-size:12px;color:var(--text2);"><span>الأساسي: <b style="color:var(--text)">'+fmt(sav.amt)+'</b></span><span>مسحوب: <b style="color:var(--red)">'+fmt(wTot)+'</b></span></div><div style="padding:10px 15px;">'+wh+pf+actionBtns+'</div></div></div>';
   }).join('');
@@ -1677,7 +1677,7 @@ function renderDebt(){
       var isCleared=remaining<=0; var bc=isCleared?'badge-clear':side==='owe'?'badge-owe':'badge-owed'; var bt=isCleared?'مسدّد':side==='owe'?'مدين':'دائن'; var pid='p-'+side+'-'+pname.replace(/[^a-zA-Z0-9\u0600-\u06FF]/g,'_'); var sc=isCleared?'var(--text2)':side==='owe'?'var(--red)':'var(--green)';
       var dh=debts.map(function(d){ var paid=d.payments.reduce(function(s,p){ return s+p.amt; },0); var rem=d.amt-paid; var pct=Math.min(100,Math.round((paid/d.amt)*100)); var sc2=rem<=0?'sb-done':paid>0?'sb-partial':'sb-pending'; var st=rem<=0?'مسدّد':paid>0?'جزئي':'معلق'; var ph=d.payments.length>0?'<div class="debt-payments"><div style="font-size:11px;color:var(--text2);margin-bottom:4px;">الدفعات:</div>'+d.payments.map(function(p){ return '<div class="payment-row"><span>'+escH(p.note)+' — '+p.date+'</span><span style="display:flex;align-items:center;gap:8px;"><b style="color:var(--green)">'+fmt(p.amt)+'</b><button class="del-btn" onclick="deletePayment(\''+side+'\',\''+d.id+'\',\''+p.id+'\')">✕</button></span></div>'; }).join('')+'</div>':''; var pf=rem>0?'<div style="margin-top:6px;"><button class="pay-btn" onclick="togglePayForm(\''+d.id+'\')">+ سجّل دفعة</button><div id="pf-'+d.id+'" style="display:none;margin-top:7px;flex-wrap:wrap;gap:6px;"><input type="number" id="pay-amt-'+d.id+'" placeholder="المبلغ" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-family:var(--font);width:110px" min="0"/><input type="text" id="pay-note-'+d.id+'" placeholder="ملاحظة" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-family:var(--font);flex:1;min-width:100px"/><button class="add-btn" style="font-size:12px;padding:5px 11px" onclick="addPayment(\''+side+'\',\''+d.id+'\')">تأكيد</button></div></div>':'';
       var actionBtns='<div style="display:flex;gap:6px;margin-top:8px;">'
-          +'<button class="pay-btn" style="color:var(--blue);border-color:var(--blue);" onclick="editDebt(\''+side+'\',\''+d.id+'\')">✏️ تعديل</button>'
+          +'<button class="pay-btn" style="color:var(--accent);border-color:var(--accent);" onclick="editDebt(\''+side+'\',\''+d.id+'\')">✏️ تعديل</button>'
           +'<button class="pay-btn" style="color:var(--red);border-color:var(--red);" onclick="deleteDebt(\''+side+'\',\''+d.id+'\')">🗑️ حذف</button>'
           +'</div>';
       return '<div class="debt-item"><div class="debt-item-top"><div><div class="debt-reason">'+escH(d.reason)+'</div><div class="debt-date">'+d.date+'</div></div><span class="status-badge '+sc2+'">'+st+'</span></div><div class="debt-amounts"><span>المبلغ: <b>'+fmt(d.amt)+'</b></span><span>مدفوع: <b style="color:var(--green)">'+fmt(paid)+'</b></span><span>متبقي: <b style="color:'+(rem<=0?'var(--green)':'var(--red)')+'">'+fmt(Math.max(0,rem))+'</b></span></div><div class="prog-bar" style="margin-bottom:8px;"><div class="prog-fill" style="width:'+pct+'%;background:'+(rem<=0?'#1D9E75':'#378ADD')+'"></div></div>'+ph+pf+actionBtns+'</div>'; }).join('');
@@ -2010,7 +2010,7 @@ function renderOverview(){
   renderBars('o-bars',Object.entries(allCats).map(function(e){ return {cat:e[0],amt:e[1]}; }));
   var om=document.getElementById('o-months');
   if(rows.length===0){ om.innerHTML='<div class="empty">لا توجد بيانات بعد</div>'; return; }
-  om.innerHTML=rows.slice().reverse().map(function(r){ var bw=r.inc>0?Math.min(100,Math.round((r.exp/r.inc)*100)):0; var col=r.left>=0?'var(--blue)':'var(--red)'; return '<div style="padding:11px 15px;border-bottom:0.5px solid var(--border);"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-size:13px;font-weight:500;">'+MN[r.m]+' '+r.y+'</span><span style="font-size:12px;color:'+col+';font-weight:500;">متبقي: '+fmt(r.left)+'</span></div><div style="display:flex;gap:14px;font-size:12px;color:var(--text2);margin-bottom:7px;"><span>دخل: <b style="color:var(--green)">'+fmt(r.inc)+'</b></span><span>مصاريف: <b style="color:var(--red)">'+fmt(r.exp)+'</b></span></div><div class="prog-bar"><div class="prog-fill" style="width:'+bw+'%;background:'+(r.left>=0?'#378ADD':'#D85A30')+'"></div></div></div>'; }).join('');
+  om.innerHTML=rows.slice().reverse().map(function(r){ var bw=r.inc>0?Math.min(100,Math.round((r.exp/r.inc)*100)):0; var col=r.left>=0?'var(--accent)':'var(--red)'; return '<div style="padding:11px 15px;border-bottom:0.5px solid var(--border);"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-size:13px;font-weight:500;">'+MN[r.m]+' '+r.y+'</span><span style="font-size:12px;color:'+col+';font-weight:500;">متبقي: '+fmt(r.left)+'</span></div><div style="display:flex;gap:14px;font-size:12px;color:var(--text2);margin-bottom:7px;"><span>دخل: <b style="color:var(--green)">'+fmt(r.inc)+'</b></span><span>مصاريف: <b style="color:var(--red)">'+fmt(r.exp)+'</b></span></div><div class="prog-bar"><div class="prog-fill" style="width:'+bw+'%;background:'+(r.left>=0?'var(--accent)':'#D85A30')+'"></div></div></div>'; }).join('');
 }
 
 /* ── EXPORT EXCEL ── */
@@ -2839,7 +2839,7 @@ window.openCatModal = function(catName, mode) {
         html += '<div class="cat-modal-month-group">'
           + '<div class="cat-modal-month-label">'
           +   MN[m]+' '+y
-          +   '<span>'+kwdFormatter.format(monthTotal)+'</span>'
+          +   '<span>'+fmt(monthTotal)+'</span>' // تم تطبيق الخصوصية هنا
           + '</div>'
           + items.sort(function(a,b){ return b.amt-a.amt; }).map(function(i){
               return '<div class="cat-modal-item">'
@@ -2851,7 +2851,7 @@ window.openCatModal = function(catName, mode) {
       });
     });
     list.innerHTML = html || '<div class="empty">لا توجد مصاريف</div>';
-    total.textContent = 'الإجمالي: ' + kwdFormatter.format(grandTotal);
+    total.textContent = 'الإجمالي: ' + fmt(grandTotal); // تم تطبيق الخصوصية هنا
 
   } else {
     // الشهر الحالي أو الرئيسية
@@ -2859,7 +2859,7 @@ window.openCatModal = function(catName, mode) {
     var items = (d.expense||[]).filter(function(i){ return i.cat === catName; });
     items.sort(function(a,b){ return b.amt - a.amt; });
     var monthTotal = items.reduce(function(s,i){ return s+i.amt; }, 0);
-    total.textContent = 'الإجمالي: ' + kwdFormatter.format(monthTotal);
+    total.textContent = 'الإجمالي: ' + fmt(monthTotal); // تم تطبيق الخصوصية هنا
     list.innerHTML = items.length === 0
       ? '<div class="empty">لا توجد مصاريف</div>'
       : items.map(function(i){
@@ -2872,7 +2872,6 @@ window.openCatModal = function(catName, mode) {
 
   document.getElementById('cat-modal-overlay').classList.add('open');
 }
-
 window.closeCatModal = function(e) {
   if(!e || e.target.id === 'cat-modal-overlay') {
     document.getElementById('cat-modal-overlay').classList.remove('open');
