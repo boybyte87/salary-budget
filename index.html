@@ -705,7 +705,7 @@ body {
 </head>
 <body>
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
   
 <div id="confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;">
   <div style="background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--r-lg);padding:24px 20px;max-width:300px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.25);">
@@ -2049,86 +2049,150 @@ function renderOverview(){
 }
 
 /* ── EXPORT EXCEL ── */
-window.exportExcel = function() {
+window.exportExcel = async function() {
   try {
-    if (typeof XLSX === 'undefined') {
-      alert('مكتبة الإكسيل لم يتم تحميلها بعد، أو يوجد مشكلة في الاتصال بها.');
+    if (typeof ExcelJS === 'undefined') {
+      alert('جاري تحميل مكتبة التصدير المتقدمة، يرجى المحاولة بعد قليل.');
       return;
     }
 
-    var wb = XLSX.utils.book_new();
-    
-    // 1. الميزانية العمومية
-    var budgetRows = [];
-    var budgetData = localData.budget || {};
-    
-    Object.keys(budgetData).sort().forEach(function(y) {
+    var wb = new ExcelJS.Workbook();
+    var all = localData.budget || {};
+    var dbData = localData.debt || {};
+
+    // ألوان الثيم المستوحاة من تطبيقك
+    var mainBg = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF185FA5' } }; // أزرق
+    var incBg = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F6E56' } }; // أخضر
+    var expBg = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF993C1D' } }; // أحمر
+    var whiteTxt = { color: { argb: 'FFFFFFFF' }, bold: true };
+    var boldTxt = { bold: true };
+
+    // 1. أوراق الأشهر
+    Object.keys(all).sort().forEach(function(y) {
       [0,1,2,3,4,5,6,7,8,9,10,11].forEach(function(m) {
-        if (!budgetData[y] || !budgetData[y][m]) return;
-        var dataObj = budgetData[y][m];
-        var monthLabel = MN[m] + " " + y;
-        
-        (dataObj.income || []).forEach(function(inc) {
-          budgetRows.push({"الشهر والسنة": monthLabel, "نوع الحركة": "مدخول (+)", "البيان": inc.name, "التصنيف": "—", "المبلغ": inc.amt, "التاريخ": inc.date || "—"});
-        });
-        
-        (dataObj.expense || []).forEach(function(exp) {
-          budgetRows.push({"الشهر والسنة": monthLabel, "نوع الحركة": "مصروف (-)", "البيان": exp.name, "التصنيف": exp.cat || "عام", "المبلغ": exp.amt, "التاريخ": exp.date || "—"});
-        });
+        if (!all[y] || !all[y][m]) return;
+        var d = all[y][m];
+        var tI = d.income.reduce(function(s, i) { return s + i.amt; }, 0);
+        var tE = d.expense.reduce(function(s, i) { return s + i.amt; }, 0);
+        if (tI === 0 && tE === 0) return;
+
+        // ميزة (RTL) ليكون الشيت من اليمين لليسار
+        var ws = wb.addWorksheet((MN[m] + ' ' + y).substring(0, 31), { views: [{ rightToLeft: true }] });
+        ws.columns = [{ width: 25 }, { width: 18 }, { width: 18 }];
+
+        var title = ws.addRow(['ميزانية ' + MN[m] + ' ' + y]);
+        title.getCell(1).font = { size: 14, bold: true, color: { argb: 'FF185FA5' } };
+        ws.addRow([]);
+
+        // قسم المدخول
+        var iHead1 = ws.addRow(['── المدخول ──']);
+        iHead1.getCell(1).fill = incBg; iHead1.getCell(1).font = whiteTxt;
+        ws.addRow(['البند', 'المبلغ (د.ك)']).font = boldTxt;
+        d.income.forEach(function(i) { ws.addRow([i.name, i.amt]); });
+        ws.addRow(['إجمالي المدخول', tI]).font = boldTxt;
+        ws.addRow([]);
+
+        // قسم المصاريف
+        var eHead1 = ws.addRow(['── المصاريف ──', '', '']);
+        eHead1.getCell(1).fill = expBg; eHead1.getCell(1).font = whiteTxt;
+        ws.addRow(['البند', 'الفئة', 'المبلغ (د.ك)']).font = boldTxt;
+        d.expense.forEach(function(i) { ws.addRow([i.name, i.cat || '', i.amt]); });
+        ws.addRow(['إجمالي المصاريف', '', tE]).font = boldTxt;
+        ws.addRow([]);
+
+        // الخلاصة
+        ws.addRow(['المدخول', tI]).font = boldTxt;
+        ws.addRow(['المصاريف', tE]).font = boldTxt;
+        var net = ws.addRow(['المتبقي', tI - tE]);
+        net.font = { bold: true, color: { argb: (tI - tE) >= 0 ? 'FF0F6E56' : 'FF993C1D' } };
+
+        // توسيط جميع الخلايا
+        ws.eachRow(function(row) { row.eachCell(function(cell) { cell.alignment = { vertical: 'middle', horizontal: 'center' }; }); });
       });
     });
+
+    // 2. ورقة الإجمالي العام
+    var ws2 = wb.addWorksheet('الإجمالي', { views: [{ rightToLeft: true }] });
+    ws2.columns = [{ width: 20 }, { width: 15 }, { width: 15 }, { width: 15 }];
+    var title2 = ws2.addRow(['ملخص جميع الأشهر']);
+    title2.getCell(1).font = { size: 14, bold: true, color: { argb: 'FF185FA5' } };
+    ws2.addRow([]);
     
-    if (budgetRows.length > 0) {
-      var wsBudget = XLSX.utils.json_to_sheet(budgetRows);
-      XLSX.utils.book_append_sheet(wb, wsBudget, "الميزانية العمومية");
-    }
-    
-    // 2. المدخرات
-    var savingsRows = [];
-    var savingsList = localData.savings || [];
-    
-    savingsList.forEach(function(sav) {
-      var wTot = (sav.withdrawals || []).reduce(function(ss, w) { return ss + w.amt; }, 0);
-      savingsRows.push({"الاسم": sav.name, "التاريخ": sav.date || "—", "الرصيد الأساسي": sav.amt, "إجمالي المسحوبات": wTot, "الصافي الحالي": Math.max(0, sav.amt - wTot)});
+    var head2 = ws2.addRow(['الشهر', 'المدخول', 'المصاريف', 'المتبقي']);
+    head2.eachCell(function(c) { c.fill = mainBg; c.font = whiteTxt; });
+
+    var gI = 0, gE = 0;
+    Object.keys(all).sort().forEach(function(y) {
+      [0,1,2,3,4,5,6,7,8,9,10,11].forEach(function(m) {
+        if (!all[y] || !all[y][m]) return;
+        var d = all[y][m];
+        var tI = d.income.reduce(function(s, i) { return s + i.amt; }, 0);
+        var tE = d.expense.reduce(function(s, i) { return s + i.amt; }, 0);
+        if (tI === 0 && tE === 0) return;
+        gI += tI; gE += tE;
+        var r = ws2.addRow([MN[m] + ' ' + y, tI, tE, tI - tE]);
+        r.getCell(4).font = { color: { argb: (tI - tE) >= 0 ? 'FF0F6E56' : 'FF993C1D' }, bold: true };
+      });
     });
-    
-    if (savingsRows.length > 0) {
-      var wsSavings = XLSX.utils.json_to_sheet(savingsRows);
-      XLSX.utils.book_append_sheet(wb, wsSavings, "المدخرات");
-    }
-    
-    // 3. المديونيات (مطابقة لمتغيراتك الأصلية person و reason)
-    var debtRows = [];
-    var dbData = localData.debt || {};
+    ws2.addRow([]);
+    var tot2 = ws2.addRow(['الإجمالي', gI, gE, gI - gE]);
+    tot2.font = boldTxt;
+    tot2.getCell(4).font = { color: { argb: (gI - gE) >= 0 ? 'FF0F6E56' : 'FF993C1D' }, bold: true };
+    ws2.eachRow(function(row) { row.eachCell(function(cell) { cell.alignment = { vertical: 'middle', horizontal: 'center' }; }); });
+
+    // 3. ورقة المدخرات
+    var wsSav = wb.addWorksheet('المدخرات', { views: [{ rightToLeft: true }] });
+    wsSav.columns = [{ width: 25 }, { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }];
+    var titleSav = wsSav.addRow(['المدخرات المركزية']);
+    titleSav.getCell(1).font = { size: 14, bold: true, color: { argb: 'FF185FA5' } };
+    wsSav.addRow([]);
+
+    var headSav = wsSav.addRow(['البند', 'تاريخ الإضافة', 'المبلغ الأساسي', 'المسحوب', 'الصافي الحالي']);
+    headSav.eachCell(function(c) { c.fill = mainBg; c.font = whiteTxt; });
+
+    (localData.savings || []).forEach(function(s) {
+      var wTot = (s.withdrawals || []).reduce(function(acc, w) { return acc + w.amt; }, 0);
+      wsSav.addRow([s.name, s.date || '', s.amt, wTot, Math.max(0, s.amt - wTot)]);
+    });
+    wsSav.eachRow(function(row) { row.eachCell(function(cell) { cell.alignment = { vertical: 'middle', horizontal: 'center' }; }); });
+
+    // 4. ورقة المديونيات
+    var wsDebt = wb.addWorksheet('المديونيات', { views: [{ rightToLeft: true }] });
+    wsDebt.columns = [{ width: 15 }, { width: 15 }, { width: 25 }, { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }, { width: 10 }];
+    var titleDebt = wsDebt.addRow(['سجل المديونيات']);
+    titleDebt.getCell(1).font = { size: 14, bold: true, color: { argb: 'FF185FA5' } };
+    wsDebt.addRow([]);
+
+    var headDebt = wsDebt.addRow(['النوع', 'الشخص', 'السبب', 'التاريخ', 'المبلغ', 'المدفوع', 'المتبقي', 'الحالة']);
+    headDebt.eachCell(function(c) { c.fill = mainBg; c.font = whiteTxt; });
+
     ['owe', 'owed'].forEach(function(side) {
       (dbData[side] || []).forEach(function(d) {
         var paid = (d.payments || []).reduce(function(s, p) { return s + p.amt; }, 0);
         var rem = Math.max(0, d.amt - paid);
-        debtRows.push({
-          "النوع": side === 'owe' ? 'مطلوب مني' : 'طالب',
-          "الشخص": d.person || "—",
-          "السبب": d.reason || "—",
-          "التاريخ": d.date || "—",
-          "المبلغ الأصلي": d.amt,
-          "المدفوع": paid,
-          "المتبقي": rem,
-          "الحالة": rem <= 0 ? 'مسدّد' : paid > 0 ? 'جزئي' : 'معلق'
-        });
+        var state = rem <= 0 ? 'مسدّد' : (paid > 0 ? 'جزئي' : 'معلق');
+        var r = wsDebt.addRow([side === 'owe' ? 'مطلوب مني' : 'طالب', d.person, d.reason, d.date, d.amt, paid, rem, state]);
+        
+        if(state === 'مسدّد') r.getCell(8).font = { color: { argb: 'FF0F6E56' }, bold: true };
+        if(state === 'معلق') r.getCell(8).font = { color: { argb: 'FF993C1D' }, bold: true };
       });
     });
-    
-    if (debtRows.length > 0) {
-      var wsDebt = XLSX.utils.json_to_sheet(debtRows);
-      XLSX.utils.book_append_sheet(wb, wsDebt, "المديونيات");
-    }
-    
-    // 4. الحفظ
+    wsDebt.eachRow(function(row) { row.eachCell(function(cell) { cell.alignment = { vertical: 'middle', horizontal: 'center' }; }); });
+
+    // 5. التنزيل
+    var buffer = await wb.xlsx.writeBuffer();
+    var blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
     var todayStr = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, 'تقرير_الميزانية_المسطح_' + todayStr + '.xlsx');
+    link.download = 'ميزانية_البيت_الملونة_' + todayStr + '.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     
   } catch (err) {
     console.error("Excel Export Error:", err);
-    alert('حصل خطأ أثناء التصدير: ' + err.message);
+    alert('حصل خطأ أثناء تصدير الإكسيل.');
   }
 };
 
