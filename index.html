@@ -984,7 +984,7 @@ body {
   <div class="page" id="page-savings">
     <div style="height:14px"></div>
     <div class="cards3" style="grid-template-columns: 1fr;">
-      <div class="card" style="text-align:center;"><div class="card-label">إجمالي المدخرات (الصافي)</div><div class="card-val cv-g" id="s-tot-val">0 د.ك</div></div>
+      <div class="card card-accent" style="text-align:center;"><div class="card-label">إجمالي المدخرات (الصافي)</div><div class="card-val" id="s-tot-val">0 د.ك</div></div>
     </div>
 
     <div class="box">
@@ -1039,13 +1039,13 @@ body {
       </div>
     </div>
     <div class="cards2" style="margin-top:-5px;">
-      <div class="card" style="background:var(--red-bg); border-color:var(--red);">
-        <div class="card-label" style="color:var(--red);">مطلوب مني (ديون)</div>
-        <div class="card-val" style="color:var(--red);" id="o-owe-total">0 د.ك</div>
+      <div class="card card-neg">
+        <div class="card-label">مطلوب مني (ديون)</div>
+        <div class="card-val" id="o-owe-total">0 د.ك</div>
       </div>
-      <div class="card" style="background:var(--green-bg); border-color:var(--green);">
-        <div class="card-label" style="color:var(--green);">طالب (أموالي عند الناس)</div>
-        <div class="card-val" style="color:var(--green);" id="o-owed-total">0 د.ك</div>
+      <div class="card card-pos">
+        <div class="card-label">طالب (أموالي عند الناس)</div>
+        <div class="card-val" id="o-owed-total">0 د.ك</div>
       </div>
     </div>
     
@@ -1066,9 +1066,9 @@ body {
 
   <div class="page" id="page-debt">
     <div style="height:14px"></div>
-    <div class="cards2">
-      <div class="card"><div class="card-label">مطلوب مني (أنا مدين)</div><div class="card-val cv-r" id="d-owe">0 د.ك</div></div>
-      <div class="card"><div class="card-label">طالب (الناس مدينة لي)</div><div class="card-val cv-g" id="d-owed">0 د.ك</div></div>
+   <div class="cards2">
+      <div class="card card-neg"><div class="card-label">مطلوب مني (أنا مدين)</div><div class="card-val" id="d-owe">0 د.ك</div></div>
+      <div class="card card-pos"><div class="card-label">طالب (الناس مدينة لي)</div><div class="card-val" id="d-owed">0 د.ك</div></div>
     </div>
     <div style="display:flex;gap:4px;margin-bottom:14px;border-bottom:0.5px solid var(--border);">
       <button class="main-tab active debt-tab-owe" id="dt-owe-btn" onclick="switchDebtTab('owe')" style="padding:8px 16px;font-size:13px;">مطلوب مني</button>
@@ -1929,7 +1929,7 @@ function debounce(func, wait) {
   };
 }
 
-/* ── RENDER MONTH MIGRATED & PERFECTED ── */
+/* ── RENDER MONTH ── */
 function renderMonth(){
   var d=getMonthData(CY,CM);
   var tI=d.income.reduce(function(s,i){ return s+i.amt; },0);
@@ -1937,7 +1937,14 @@ function renderMonth(){
   var left=tI-tE;
   document.getElementById('m-inc').textContent=fmt(tI);
   document.getElementById('m-exp').textContent=fmt(tE);
-  var elL=document.getElementById('m-left'); elL.textContent=fmt(left); elL.className='card-val '+(left>=0?'cv-b':'cv-r');
+  
+  var elL=document.getElementById('m-left'); 
+  if(elL) {
+    elL.textContent=fmt(left);
+    var parentCard = elL.closest('.card');
+    if(parentCard) parentCard.className = 'card ' + (left>=0 ? 'card-accent' : 'card-neg');
+  }
+
   document.getElementById('m-inc-t').textContent=tI>0?fmt(tI):'';
   document.getElementById('m-exp-t').textContent=tE>0?fmt(tE):'';
   
@@ -1948,14 +1955,12 @@ function renderMonth(){
   var expListEl = document.getElementById('m-exp-list');
   if(searchExp) {
     expItems=expItems.filter(function(i){ return i.name.toLowerCase().includes(searchExp)||(i.cat||'').toLowerCase().includes(searchExp); });
-    // إذا بدأ المستخدم بالكتابة والصندوق مغلق -> افتحه تلقائياً لعرض النتائج
     if(expListEl && expListEl.style.display === 'none') {
       expListEl.style.display = 'block';
       var btnExp = document.getElementById('btn-m-exp-list');
       if(btnExp) btnExp.textContent = '🔽';
     }
   } else {
-    // إذا مسح المستخدم نص البحث بالكامل وعاد الحقل فارغاً -> أعد طي الصندوق تلقائياً ليبقى المظهر مرتباً
     if(expListEl) {
       expListEl.style.display = 'none';
       var btnExpClose = document.getElementById('btn-m-exp-list');
@@ -1973,7 +1978,7 @@ function renderMonth(){
     if(canvas && canvas.getContext){
       mChart=new Chart(canvas,{
         type:'bar',
-        data:{labels:['المدخول','المصاريف','المتبقي'],datasets:[{data:[tI,tE,Math.max(0,left)],backgroundColor:['#1D9E75','#D85A30','#378ADD'],borderRadius:6,borderSkipped:false}]},
+        data:{labels:['المدخول','المصاريف','المتبقي'],datasets:[{data:[tI,tE,Math.max(0,left)],backgroundColor:['#1D9E75','#D85A30','var(--accent)'],borderRadius:6,borderSkipped:false}]},
         options:{
           responsive:true,maintainAspectRatio:false,
           plugins:{
@@ -1989,7 +1994,7 @@ function renderMonth(){
     }
   }
 }
-
+  
 /* ── RENDER OVERVIEW ── */
 function renderOverview(){
   var all=localData.budget; var tI=0,tE=0, allCats={},rows=[],labels=[],dI=[],dE=[];
@@ -1999,17 +2004,16 @@ function renderOverview(){
   var tOwe = (localData.debt.owe||[]).reduce(function(s, d) { return s + Math.max(0, d.amt - (d.payments||[]).reduce((ss,p)=>ss+p.amt,0)); }, 0);
   var tOwed = (localData.debt.owed||[]).reduce(function(s, d) { return s + Math.max(0, d.amt - (d.payments||[]).reduce((ss,p)=>ss+p.amt,0)); }, 0);
 
-  var incEl = document.getElementById('o-inc'); if(incEl) incEl.textContent=fmt(tI);
-  var expEl = document.getElementById('o-exp'); if(expEl) expEl.textContent=fmt(tE);
+  var incEl = document.getElementById('o-inc-total'); if(incEl) incEl.textContent=fmt(tI);
+  var expEl = document.getElementById('o-exp-total'); if(expEl) expEl.textContent=fmt(tE);
   var savEl = document.getElementById('o-sav-total'); if(savEl) savEl.textContent=fmt(tS);
   var oweEl = document.getElementById('o-owe-total'); if(oweEl) oweEl.textContent=fmt(tOwe);
   var owedEl = document.getElementById('o-owed-total'); if(owedEl) owedEl.textContent=fmt(tOwed);
   
-  var el=document.getElementById('o-left'); 
+  var el=document.getElementById('o-left-total'); 
   if(el) {
     var net=tI-tE; 
     el.textContent=fmt(net); 
-    el.className='card-val'; 
     var parentCard = el.closest('.card');
     if(parentCard) parentCard.className = 'card ' + (net>=0 ? 'card-accent' : 'card-neg');
   }
