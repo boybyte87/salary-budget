@@ -2049,72 +2049,88 @@ function renderOverview(){
 }
 
 /* ── EXPORT EXCEL ── */
-function exportToExcel() {
-  if (typeof XLSX === 'undefined') {
-    alert('جاري تحميل مكتبة التصدير، يرجى المحاولة بعد ثانية واحدة.');
-    return;
-  }
+window.exportExcel = function() {
+  try {
+    if (typeof XLSX === 'undefined') {
+      alert('مكتبة الإكسيل لم يتم تحميلها بعد، أو يوجد مشكلة في الاتصال بها.');
+      return;
+    }
 
-  var wb = XLSX.utils.book_new();
-  
-  var budgetRows = [];
-  var budgetData = localData.budget || {};
-  
-  Object.keys(budgetData).sort().forEach(function(y) {
-    [0,1,2,3,4,5,6,7,8,9,10,11].forEach(function(m) {
-      if (!budgetData[y] || !budgetData[y][m]) return;
-      var dataObj = budgetData[y][m];
-      var monthLabel = MN[m] + " " + y;
-      
-      (dataObj.income || []).forEach(function(inc) {
-        budgetRows.push({"الشهر والسنة": monthLabel, "نوع الحركة": "مدخول (+)", "البيان / الاسم": inc.name, "التصنيف": "—", "المبلغ (د.ك)": inc.amt, "التاريخ": inc.date || "—"});
-      });
-      
-      (dataObj.expense || []).forEach(function(exp) {
-        budgetRows.push({"الشهر والسنة": monthLabel, "نوع الحركة": "مصروف (-)", "البيان / الاسم": exp.name, "التصنيف": exp.cat || "عام", "المبلغ (د.ك)": exp.amt, "التاريخ": exp.date || "—"});
+    var wb = XLSX.utils.book_new();
+    
+    // 1. الميزانية العمومية
+    var budgetRows = [];
+    var budgetData = localData.budget || {};
+    
+    Object.keys(budgetData).sort().forEach(function(y) {
+      [0,1,2,3,4,5,6,7,8,9,10,11].forEach(function(m) {
+        if (!budgetData[y] || !budgetData[y][m]) return;
+        var dataObj = budgetData[y][m];
+        var monthLabel = MN[m] + " " + y;
+        
+        (dataObj.income || []).forEach(function(inc) {
+          budgetRows.push({"الشهر والسنة": monthLabel, "نوع الحركة": "مدخول (+)", "البيان": inc.name, "التصنيف": "—", "المبلغ": inc.amt, "التاريخ": inc.date || "—"});
+        });
+        
+        (dataObj.expense || []).forEach(function(exp) {
+          budgetRows.push({"الشهر والسنة": monthLabel, "نوع الحركة": "مصروف (-)", "البيان": exp.name, "التصنيف": exp.cat || "عام", "المبلغ": exp.amt, "التاريخ": exp.date || "—"});
+        });
       });
     });
-  });
-  
-  if (budgetRows.length > 0) {
-    var wsBudget = XLSX.utils.json_to_sheet(budgetRows);
-    XLSX.utils.book_append_sheet(wb, wsBudget, "الميزانية العمومية");
+    
+    if (budgetRows.length > 0) {
+      var wsBudget = XLSX.utils.json_to_sheet(budgetRows);
+      XLSX.utils.book_append_sheet(wb, wsBudget, "الميزانية العمومية");
+    }
+    
+    // 2. المدخرات
+    var savingsRows = [];
+    var savingsList = localData.savings || [];
+    
+    savingsList.forEach(function(sav) {
+      var wTot = (sav.withdrawals || []).reduce(function(ss, w) { return ss + w.amt; }, 0);
+      savingsRows.push({"الاسم": sav.name, "التاريخ": sav.date || "—", "الرصيد الأساسي": sav.amt, "إجمالي المسحوبات": wTot, "الصافي الحالي": Math.max(0, sav.amt - wTot)});
+    });
+    
+    if (savingsRows.length > 0) {
+      var wsSavings = XLSX.utils.json_to_sheet(savingsRows);
+      XLSX.utils.book_append_sheet(wb, wsSavings, "المدخرات");
+    }
+    
+    // 3. المديونيات (مطابقة لمتغيراتك الأصلية person و reason)
+    var debtRows = [];
+    var dbData = localData.debt || {};
+    ['owe', 'owed'].forEach(function(side) {
+      (dbData[side] || []).forEach(function(d) {
+        var paid = (d.payments || []).reduce(function(s, p) { return s + p.amt; }, 0);
+        var rem = Math.max(0, d.amt - paid);
+        debtRows.push({
+          "النوع": side === 'owe' ? 'مطلوب مني' : 'طالب',
+          "الشخص": d.person || "—",
+          "السبب": d.reason || "—",
+          "التاريخ": d.date || "—",
+          "المبلغ الأصلي": d.amt,
+          "المدفوع": paid,
+          "المتبقي": rem,
+          "الحالة": rem <= 0 ? 'مسدّد' : paid > 0 ? 'جزئي' : 'معلق'
+        });
+      });
+    });
+    
+    if (debtRows.length > 0) {
+      var wsDebt = XLSX.utils.json_to_sheet(debtRows);
+      XLSX.utils.book_append_sheet(wb, wsDebt, "المديونيات");
+    }
+    
+    // 4. الحفظ
+    var todayStr = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, 'تقرير_الميزانية_المسطح_' + todayStr + '.xlsx');
+    
+  } catch (err) {
+    console.error("Excel Export Error:", err);
+    alert('حصل خطأ أثناء التصدير: ' + err.message);
   }
-  
-  var savingsRows = [];
-  var savingsList = localData.savings || [];
-  
-  savingsList.forEach(function(sav) {
-    var wTot = (sav.withdrawals || []).reduce(function(ss, w) { return ss + w.amt; }, 0);
-    savingsRows.push({"حساب الادخار": sav.name, "الرصيد التأسيسي (د.ك)": sav.amt, "إجمالي المسحوبات (د.ك)": wTot, "الصافي الحالي (د.ك)": Math.max(0, sav.amt - wTot), "تاريخ الإنشاء": sav.date || "—"});
-  });
-  
-  if (savingsRows.length > 0) {
-    var wsSavings = XLSX.utils.json_to_sheet(savingsRows);
-    XLSX.utils.book_append_sheet(wb, wsSavings, "المدخرات الحالية");
-  }
-  
-  var debtRows = [];
-  var oweList = (localData.debt && localData.debt.owe) || [];
-  oweList.forEach(function(d) {
-    var pTot = (d.payments || []).reduce(function(ss, p) { return ss + p.amt; }, 0);
-    debtRows.push({"الاسم / الشخص": d.name, "طبيعة المديونية": "مطلوب مني (ديون علي)", "المبلغ الأصلي (د.ك)": d.amt, "المدفوع حتى الآن (د.ك)": pTot, "المتبقي القائم (د.ك)": Math.max(0, d.amt - pTot), "حالة الدين": (d.amt - pTot <= 0) ? "✓ مسدد بالكامل" : "قائم", "تاريخ المعاملة": d.date || "—"});
-  });
-  
-  var owedList = (localData.debt && localData.debt.owed) || [];
-  owedList.forEach(function(d) {
-    var pTot = (d.payments || []).reduce(function(ss, p) { return ss + p.amt; }, 0);
-    debtRows.push({"الاسم / الشخص": d.name, "طبيعة المديونية": "طالب (أموالي عند الناس)", "المبلغ الأصلي (د.ك)": d.amt, "المدفوع حتى الآن (د.ك)": pTot, "المتبقي القائم (د.ك)": Math.max(0, d.amt - pTot), "حالة الدين": (d.amt - pTot <= 0) ? "✓ مسدد بالكامل" : "قائم", "تاريخ المعاملة": d.date || "—"});
-  });
-  
-  if (debtRows.length > 0) {
-    var wsDebt = XLSX.utils.json_to_sheet(debtRows);
-    XLSX.utils.book_append_sheet(wb, wsDebt, "كشف الديون والالتزامات");
-  }
-  
-  var todayStr = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(wb, "تقرير_الميزانية_الشامل_" + todayStr + ".xlsx");
-}
+};
 
 /* ── IMPORT EXCEL ── */
 window.importExcel=function(event){ var file=event.target.files[0]; if(!file)return; var reader=new FileReader();
