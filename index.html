@@ -31,6 +31,16 @@ body.theme-black{--bg:#000;--surface:#111;--surface2:#1a1a1a;--text:#f0f0f0;--te
   body:not([class*="theme-"]){--bg:#111110;--surface:#1c1c1a;--surface2:#242422;--text:#f0efea;--text2:#8a8a86;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);}
 }
 
+/* ── نظام البطاقات الموحد (Design System) ── */
+.card-pos { border: 2px solid var(--green) !important; background: var(--surface) !important; }
+.card-pos .card-label, .card-pos .card-val { color: var(--green) !important; }
+
+.card-neg { border: 2px solid var(--red) !important; background: var(--surface) !important; }
+.card-neg .card-label, .card-neg .card-val { color: var(--red) !important; }
+
+.card-accent { border: 2px solid var(--accent) !important; background: var(--surface) !important; }
+.card-accent .card-label, .card-accent .card-val { color: var(--accent) !important; }
+  
 /* FIXES FOR TABS & ALERTS */
 .topbar { height: 57px; } /* إجبار الارتفاع لضمان عدم وجود فراغ */
 .main-tabs::-webkit-scrollbar { display: none; } /* إخفاء الأسهم المزعجة */
@@ -909,10 +919,10 @@ body {
 
   </div> <div class="page" id="page-month">
     <div style="height:14px"></div>
-    <div class="cards3">
-      <div class="card"><div class="card-label">المدخول</div><div class="card-val cv-g" id="m-inc">0 د.ك</div></div>
-      <div class="card"><div class="card-label">المصاريف</div><div class="card-val cv-r" id="m-exp">0 د.ك</div></div>
-      <div class="card"><div class="card-label">المتبقي</div><div class="card-val cv-b" id="m-left">0 د.ك</div></div>
+   <div class="cards3">
+      <div class="card card-pos"><div class="card-label">المدخول</div><div class="card-val" id="m-inc">0 د.ك</div></div>
+      <div class="card card-neg"><div class="card-label">المصاريف</div><div class="card-val" id="m-exp">0 د.ك</div></div>
+      <div class="card card-accent"><div class="card-label">المتبقي</div><div class="card-val" id="m-left">0 د.ك</div></div>
     </div>
 
    <div class="box">
@@ -1008,14 +1018,25 @@ body {
 
   <div class="page" id="page-overview">
     <div style="height:14px"></div>
+   <div class="cards2">
+      <div class="card card-pos">
+        <div class="card-label">إجمالي الدخل</div>
+        <div class="card-val" id="o-inc-total">0 د.ك</div>
+      </div>
+      <div class="card card-neg">
+        <div class="card-label">إجمالي المصاريف</div>
+        <div class="card-val" id="o-exp-total">0 د.ك</div>
+      </div>
+    </div>
     <div class="cards2">
-      <div class="card"><div class="card-label">إجمالي الدخل</div><div class="card-val cv-g" id="o-inc">0 د.ك</div></div>
-      <div class="card"><div class="card-label">إجمالي المصاريف</div><div class="card-val cv-r" id="o-exp">0 د.ك</div></div>
-      <div class="card"><div class="card-label">المتبقي (فائض)</div><div class="card-val cv-b" id="o-left">0 د.ك</div></div>
-      <div class="card" style="background:var(--surface); border-color:var(--accent);">
-  <div class="card-label" style="color:var(--accent);">صافي المدخرات الفعلية</div>
-  <div class="card-val" style="color:var(--accent);" id="o-sav-total">0 د.ك</div>
-</div>
+      <div class="card card-accent">
+        <div class="card-label">المتبقي (فائض)</div>
+        <div class="card-val" id="o-left-total">0 د.ك</div>
+      </div>
+      <div class="card card-accent">
+        <div class="card-label">صافي المدخرات الفعلية</div>
+        <div class="card-val" id="o-sav-total">0 د.ك</div>
+      </div>
     </div>
     <div class="cards2" style="margin-top:-5px;">
       <div class="card" style="background:var(--red-bg); border-color:var(--red);">
@@ -1650,8 +1671,7 @@ function renderSavings() {
       var pf = rem>0 ? '<div style="margin-top:8px;"><button class="pay-btn" onclick="togglePayForm(\'ws-'+sav.id+'\')">💸 سحب من الرصيد</button><div id="pf-ws-'+sav.id+'" style="display:none;margin-top:7px;flex-wrap:wrap;gap:6px;"><input type="number" id="w-amt-'+sav.id+'" placeholder="المبلغ" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-family:var(--font);width:110px" min="0"/><input type="text" id="w-reason-'+sav.id+'" placeholder="السبب" style="font-size:12px;padding:5px 8px;border:0.5px solid var(--border2);border-radius:var(--r-md);background:var(--surface);color:var(--text);font-family:var(--font);flex:1;min-width:100px"/><button class="add-btn" style="font-size:12px;padding:5px 11px" onclick="addWithdrawal(\''+sav.id+'\')">تأكيد</button></div></div>' : '';
       var actionBtns = '<div style="display:flex;gap:6px;margin-top:10px;"><button class="pay-btn" style="color:var(--accent);border-color:var(--accent);" onclick="editSaving(\''+sav.id+'\')">✏️ تعديل</button><button class="pay-btn" style="color:var(--red);border-color:var(--red);" onclick="deleteSaving(\''+sav.id+'\')">🗑️ حذف</button></div>';
 
-      return '<div class="person-card" style="margin:10px;border-radius:var(--r-lg);"><div class="person-head" onclick="togglePersonBody(\'sav-'+sav.id+'\')"><span class="person-name-row"><span style="width:32px;height:32px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0;">💰</span><div style="display:flex;flex-direction:column;"><span style="font-size:14px;">'+escH(sav.name)+'</span><span style="font-size:10px;color:var(--text2);margin-top:2px;">تم الإضافة: '+sav.date+'</span></div></span><span style="font-size:13px;font-weight:500;color:var(--green);">'+fmt(Math.max(0,rem))+'</span></div><div class="person-body" id="pb-sav-'+sav.id+'"><div style="padding:10px 15px;background:var(--surface2);display:flex;justify-content:space-between;font-size:12px;color:var(--text2);"><span>الأساسي: <b style="color:var(--text)">'+fmt(sav.amt)+'</b></span><span>مسحوب: <b style="color:var(--red)">'+fmt(wTot)+'</b></span></div><div style="padding:10px 15px;">'+wh+pf+actionBtns+'</div></div></div>';
-  }).join('');
+return '<div class="person-card card-accent" style="margin:10px;border-radius:var(--r-lg);"><div class="person-head" onclick="togglePersonBody(\'sav-'+sav.id+'\')"><span class="person-name-row"><span style="width:32px;height:32px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0;">💰</span><div style="display:flex;flex-direction:column;"><span style="font-size:14px;">'+escH(sav.name)+'</span><span style="font-size:10px;color:var(--text2);margin-top:2px;">تم الإضافة: '+sav.date+'</span></div></span><span style="font-size:13px;font-weight:500;color:var(--accent);">'+fmt(Math.max(0,rem))+'</span></div><div class="person-body" id="pb-sav-'+sav.id+'"><div style="padding:10px 15px;background:var(--surface2);display:flex;justify-content:space-between;font-size:12px;color:var(--text2);"><span>الأساسي: <b style="color:var(--text)">'+fmt(sav.amt)+'</b></span><span>مسحوب: <b style="color:var(--red)">'+fmt(wTot)+'</b></span></div><div style="padding:10px 15px;">'+wh+pf+actionBtns+'</div></div></div>';  }).join('');
 
   document.getElementById('s-tot-val').textContent = fmt(tNet);
 }
@@ -1681,8 +1701,8 @@ function renderDebt(){
           +'<button class="pay-btn" style="color:var(--red);border-color:var(--red);" onclick="deleteDebt(\''+side+'\',\''+d.id+'\')">🗑️ حذف</button>'
           +'</div>';
       return '<div class="debt-item"><div class="debt-item-top"><div><div class="debt-reason">'+escH(d.reason)+'</div><div class="debt-date">'+d.date+'</div></div><span class="status-badge '+sc2+'">'+st+'</span></div><div class="debt-amounts"><span>المبلغ: <b>'+fmt(d.amt)+'</b></span><span>مدفوع: <b style="color:var(--green)">'+fmt(paid)+'</b></span><span>متبقي: <b style="color:'+(rem<=0?'var(--green)':'var(--red)')+'">'+fmt(Math.max(0,rem))+'</b></span></div><div class="prog-bar" style="margin-bottom:8px;"><div class="prog-fill" style="width:'+pct+'%;background:'+(rem<=0?'#1D9E75':'#378ADD')+'"></div></div>'+ph+pf+actionBtns+'</div>'; }).join('');
-      return '<div class="person-card" style="margin:10px;border-radius:var(--r-lg);"><div class="person-head" onclick="togglePersonBody(\''+pid+'\')"><span class="person-name-row"><span style="width:32px;height:32px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0;">'+pname.charAt(0)+'</span>'+escH(pname)+'<span class="person-badge '+bc+'">'+bt+'</span></span><span style="font-size:13px;font-weight:500;color:'+sc+';">'+(isCleared?'✓ مسدّد':fmt(remaining))+'</span></div><div class="person-body" id="pb-'+pid+'">'+dh+'<div style="padding:10px 15px;background:var(--surface2);display:flex;justify-content:space-between;font-size:12px;color:var(--text2);"><span>إجمالي: <b style="color:var(--text)">'+fmt(grossAmt)+'</b></span><span>متبقي: <b style="color:'+(isCleared?'var(--green)':side==='owe'?'var(--red)':'var(--green)')+'">'+fmt(Math.max(0,remaining))+'</b></span></div></div></div>';
-    }).join('');
+var cardClass = isCleared ? '' : (side === 'owe' ? 'card-neg' : 'card-pos');
+    return '<div class="person-card ' + cardClass + '" style="margin:10px;border-radius:var(--r-lg);"><div class="person-head" onclick="togglePersonBody(\''+pid+'\')"><span class="person-name-row"><span style="width:32px;height:32px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0;">'+pname.charAt(0)+'</span>'+escH(pname)+'<span class="person-badge '+bc+'">'+bt+'</span></span><span style="font-size:13px;font-weight:500;color:'+sc+';">'+(isCleared?'✓ مسدّد':fmt(remaining))+'</span></div><div class="person-body" id="pb-'+pid+'">'+dh+'<div style="padding:10px 15px;background:var(--surface2);display:flex;justify-content:space-between;font-size:12px;color:var(--text2);"><span>إجمالي: <b style="color:var(--text)">'+fmt(grossAmt)+'</b></span><span>متبقي: <b style="color:'+(isCleared?'var(--green)':side==='owe'?'var(--red)':'var(--green)')+'">'+fmt(Math.max(0,remaining))+'</b></span></div></div></div>';    }).join('');
     if(side==='owe')totalOwe=sideTotal; else totalOwed=sideTotal;
   });
   document.getElementById('d-owe').textContent=fmt(totalOwe);
@@ -1976,15 +1996,23 @@ function renderOverview(){
   Object.keys(all).sort().forEach(function(y){ [0,1,2,3,4,5,6,7,8,9,10,11].forEach(function(m){ if(!all[y]||!all[y][m])return; var d=all[y][m]; var inc=d.income.reduce(function(s,i){ return s+i.amt; },0); var exp=d.expense.reduce(function(s,i){ return s+i.amt; },0); if(inc===0&&exp===0)return; tI+=inc; tE+=exp; d.expense.forEach(function(i){ allCats[i.cat]=(allCats[i.cat]||0)+i.amt; }); labels.push(MN[m].substring(0,3)+" '"+String(y).substring(2)); dI.push(inc); dE.push(exp); rows.push({y:y,m:m,inc:inc,exp:exp,left:inc-exp}); }); });
   var tS = localData.savings.reduce(function(s,i){ return s + Math.max(0, i.amt - i.withdrawals.reduce((ss,w)=>ss+w.amt,0)); }, 0);
   
-  var tOwe = localData.debt.owe.reduce(function(s, d) { return s + Math.max(0, d.amt - d.payments.reduce((ss,p)=>ss+p.amt,0)); }, 0);
-  var tOwed = localData.debt.owed.reduce(function(s, d) { return s + Math.max(0, d.amt - d.payments.reduce((ss,p)=>ss+p.amt,0)); }, 0);
+  var tOwe = (localData.debt.owe||[]).reduce(function(s, d) { return s + Math.max(0, d.amt - (d.payments||[]).reduce((ss,p)=>ss+p.amt,0)); }, 0);
+  var tOwed = (localData.debt.owed||[]).reduce(function(s, d) { return s + Math.max(0, d.amt - (d.payments||[]).reduce((ss,p)=>ss+p.amt,0)); }, 0);
 
-  document.getElementById('o-inc').textContent=fmt(tI); document.getElementById('o-exp').textContent=fmt(tE);
-  document.getElementById('o-sav-total').textContent=fmt(tS);
-  document.getElementById('o-owe-total').textContent=fmt(tOwe);
-  document.getElementById('o-owed-total').textContent=fmt(tOwed);
+  var incEl = document.getElementById('o-inc'); if(incEl) incEl.textContent=fmt(tI);
+  var expEl = document.getElementById('o-exp'); if(expEl) expEl.textContent=fmt(tE);
+  var savEl = document.getElementById('o-sav-total'); if(savEl) savEl.textContent=fmt(tS);
+  var oweEl = document.getElementById('o-owe-total'); if(oweEl) oweEl.textContent=fmt(tOwe);
+  var owedEl = document.getElementById('o-owed-total'); if(owedEl) owedEl.textContent=fmt(tOwed);
   
-  var el=document.getElementById('o-left'); var net=tI-tE; el.textContent=fmt(net); el.className='card-val '+(net>=0?'cv-b':'cv-r');
+  var el=document.getElementById('o-left'); 
+  if(el) {
+    var net=tI-tE; 
+    el.textContent=fmt(net); 
+    el.className='card-val'; 
+    var parentCard = el.closest('.card');
+    if(parentCard) parentCard.className = 'card ' + (net>=0 ? 'card-accent' : 'card-neg');
+  }
   
   if(oChart){ oChart.destroy(); oChart=null; }
   if(labels.length>0){
