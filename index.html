@@ -762,17 +762,17 @@ body {
           <div class="user-dropdown" id="user-dropdown">
             <div class="user-dropdown-name" id="user-name"></div>
             <div class="user-dropdown-email" id="user-email"></div>
-            <button class="menu-btn" onclick="togglePrivacy()">👁️ إخفاء / إظهار الأرقام</button>
-            <button class="menu-btn" onclick="document.getElementById('bg-upload').click()">🖼️ تغيير الخلفية</button>
-            <button class="pay-btn" style="color:var(--green); border-color:var(--green); width:100%; margin-top:10px;" onclick="exportToExcel()">📊 تصدير تقرير Excel</button>
-            <button class="menu-btn" onclick="exportExcel()">📊 تصدير Excel</button>       
-            <button class="menu-btn" onclick="document.getElementById('xl-import').click()">📥 استيراد Excel</button>
-          <button class="menu-btn" onclick="exportJSON()">💾 تنزيل نسخة احتياطية</button>
-          <button class="menu-btn" onclick="document.getElementById('json-import').click()">📂 استرجاع نسخة سابقة</button>
-            <div class="theme-section">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <span class="theme-label" style="margin:0;">حجم الخط</span>
-                <div style="display:flex;gap:4px;">
+         <button class="pay-btn" style="color:var(--accent); border-color:var(--accent); width:100%; margin-bottom:10px;" onclick="togglePrivacy()">إخفاء / إظهار الأرقام</button>
+          <button class="pay-btn" style="color:var(--accent); border-color:var(--accent); width:100%; margin-bottom:10px;" onclick="document.getElementById('bg-upload').click()">تغيير الخلفية</button>
+          <button class="pay-btn" style="color:var(--accent); border-color:var(--accent); width:100%; margin-bottom:10px;" onclick="exportExcel()">تصدير Excel</button>       
+          <button class="pay-btn" style="color:var(--accent); border-color:var(--accent); width:100%; margin-bottom:10px;" onclick="document.getElementById('xl-import').click()">استيراد Excel</button>
+          <button class="pay-btn" style="color:var(--accent); border-color:var(--accent); width:100%; margin-bottom:10px;" onclick="exportJSON()">تنزيل نسخة احتياطية</button>
+          <button class="pay-btn" style="color:var(--accent); border-color:var(--accent); width:100%; margin-bottom:15px;" onclick="document.getElementById('json-import').click()">استرجاع نسخة سابقة</button>
+          
+          <div class="theme-section">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <span class="theme-label" style="margin:0;">حجم الخط</span>
+              <div style="display:flex;gap:4px;">
                   <button onclick="changeFontSize(1)" style="padding:2px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);color:var(--text);cursor:pointer;">A+</button>
                   <button onclick="changeFontSize(0)" style="padding:2px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);color:var(--text);cursor:pointer;">A</button>
                   <button onclick="changeFontSize(-1)" style="padding:2px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:4px;background:var(--surface2);color:var(--text);cursor:pointer;">A-</button>
